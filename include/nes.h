@@ -6,8 +6,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "opcodes.h"
-
 typedef struct _status {
     union {
         uint8_t carry : 1;
@@ -61,7 +59,7 @@ typedef struct _header {
     union {
         struct {
             uint8_t tv_system_2 : 2; // 0: NTSC, 2: PAL, else compat
-            uint8_t reserved    : 2;
+            uint8_t reserved2   : 2;
             uint8_t is_prg_ram  : 1;
             uint8_t bus_conflict: 1;
         };
@@ -77,7 +75,7 @@ typedef struct _header {
     uint8_t chrnvram_size : 4;
     // 0xC
     uint8_t proc_timing   : 2; // 0: ntsc, 1: pal, 2: multi-region, 3: dendy
-    uint8_t reserved      : 6;
+    uint8_t reserved3     : 6;
     // 0xD
     union {
         struct {
@@ -88,10 +86,10 @@ typedef struct _header {
     };
     // 0xE
     uint8_t num_roms : 2;
-    uint8_t reserved2 : 6;
+    uint8_t reserved4 : 6;
     // 0xF
     uint8_t def_exp_dev : 6;
-    uint8_t reserved3 : 2;
+    uint8_t reserved5 : 2;
 } Header;
 
 typedef struct _NES {
@@ -109,15 +107,17 @@ typedef struct _NES {
     Header header;
 } NES;
 
-typedef (*opcodeFunc)(NES*);
+typedef uint32_t (*opcodeFunc)(NES*);
 
-uint8_t* prgROM;
-uint8_t* chrROM;
-uint8_t* prgRAM;
-uint8_t* prgNVRAM;
-uint8_t* chrRAM;
-uint8_t* chrNVRAM;
-char* fileName;
+#include "opcodes.h"
+
+extern uint8_t* prgROM;
+extern uint8_t* chrROM;
+extern uint8_t* prgRAM;
+extern uint8_t* prgNVRAM;
+extern uint8_t* chrRAM;
+extern uint8_t* chrNVRAM;
+extern char* fileName;
 
 NES* newNES(void);
 void NESLoadROM(NES* this, char const* filename);

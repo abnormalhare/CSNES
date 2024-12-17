@@ -1,5 +1,13 @@
 #include "nes.h"
 
+uint8_t* prgROM;
+uint8_t* chrROM;
+uint8_t* prgRAM;
+uint8_t* prgNVRAM;
+uint8_t* chrRAM;
+uint8_t* chrNVRAM;
+char* fileName;
+
 const opcodeFunc opTable[] = {
     OP_00, OP_01, OP_STP, OP_03, OP_04, OP_05, OP_06, OP_07, OP_08, OP_09, OP_0A, OP_0B, OP_0C, OP_0D, OP_0E, OP_0F,
     OP_10, OP_11, OP_STP, OP_13, OP_14, OP_15, OP_16, OP_17, OP_18, OP_19, OP_1A, OP_1B, OP_1C, OP_1D, OP_1E, OP_1F,
@@ -28,18 +36,18 @@ NES* newNES(void) {
     return nes;
 }
 
-void NESLoadHeader(NES* this, uint8_t* header[]) {
+void NESLoadHeader(NES* this, uint8_t header[]) {
     uint8_t flags = header[6];
-    this->header.mirror_mode = flags & 0x01 >> 0;
-    this->header.has_battery = flags & 0x02 >> 1;
-    this->header.has_trainer = flags & 0x04 >> 2;
-    this->header.nametable   = flags & 0x08 >> 3;
-    this->header.mapper_lo   = flags & 0xF0 >> 4;
+    this->header.mirror_mode = (flags & 0x01) >> 0;
+    this->header.has_battery = (flags & 0x02) >> 1;
+    this->header.has_trainer = (flags & 0x04) >> 2;
+    this->header.nametable   = (flags & 0x08) >> 3;
+    this->header.mapper_lo   = (flags & 0xF0) >> 4;
 
     flags = header[7];
-    this->header.console_type = flags & 0x03;
-    this->header.nes2         = flags & 0x0C >> 2;
-    this->header.mapper_hi    = flags & 0xF0 >> 4;
+    this->header.console_type = (flags & 0x03);
+    this->header.nes2         = (flags & 0x0C) >> 2;
+    this->header.mapper_hi    = (flags & 0xF0) >> 4;
 
     if (this->header.nes2 != 2) {
         flags = header[8];
@@ -49,33 +57,33 @@ void NESLoadHeader(NES* this, uint8_t* header[]) {
         this->header.tv_system = flags & 0x1;
 
         flags = header[10];
-        this->header.tv_system_2  = flags & 0x3;
-        this->header.is_prg_ram   = flags & 0x4 >> 2;
-        this->header.bus_conflict = flags & 0x8 >> 3;
+        this->header.tv_system_2  = (flags & 0x3);
+        this->header.is_prg_ram   = (flags & 0x4) >> 2;
+        this->header.bus_conflict = (flags & 0x8) >> 3;
     } else {
         flags = header[8];
-        this->header.mapper_hiest = flags & 0x0F;
-        this->header.submapper    = flags & 0xF0;
+        this->header.mapper_hiest = (flags & 0x0F);
+        this->header.submapper    = (flags & 0xF0) >> 4;
 
         flags = header[9];
-        this->header.prg_rom_hi   = flags & 0x0F;
-        this->header.chr_rom_hi   = flags & 0xF0;
+        this->header.prg_rom_hi   = (flags & 0x0F);
+        this->header.chr_rom_hi   = (flags & 0xF0) >> 4;
 
         flags = header[10];
-        this->header.prgram_size   = flags & 0x0F;
-        this->header.prgnvram_size = flags & 0xF0;
+        this->header.prgram_size   = (flags & 0x0F);
+        this->header.prgnvram_size = (flags & 0xF0) >> 4;
 
         flags = header[11];
-        this->header.chrram_size   = flags & 0x0F;
-        this->header.chrnvram_size = flags & 0xF0;
+        this->header.chrram_size   = (flags & 0x0F);
+        this->header.chrnvram_size = (flags & 0xF0) >> 4;
 
         flags = header[12];
         this->header.proc_timing   = flags & 0x2;
 
         flags = header[13];
         if (this->header.console_type == 1) {
-            this->header.vs_ppu_type = flags & 0x0F;
-            this->header.vs_hw_type  = flags & 0xF0;
+            this->header.vs_ppu_type = (flags & 0x0F);
+            this->header.vs_hw_type  = (flags & 0xF0) >> 4;
         } else if (this->header.console_type == 3) {
             this->header.ext_cons_type = flags & 0x0F;
         }
@@ -165,5 +173,5 @@ void NESLoadROM(NES* this, char const* filename) {
 }
 
 uint32_t Cycle(NES* this) {
-    return opTable[this->RAM[this->pc]];
+    return opTable[this->RAM[this->pc]](this);
 }
