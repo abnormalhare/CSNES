@@ -123,6 +123,11 @@ void OP_EOR(NES* this, uint8_t mem) {
     this->p.neg  = (this->a > 0x7F);
 }
 
+void OP_LAX(NES* this, uint8_t mem) {
+    OP_LDA(this, mem);
+    this->x = this->a;
+}
+
 void OP_LDA(NES* this, uint8_t mem) {
     this->a = mem;
 

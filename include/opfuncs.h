@@ -23,6 +23,7 @@ void OP_CPY(NES* this, uint8_t mem);
 void OP_DEC(NES* this, uint8_t* mem);
 void OP_INC(NES* this, uint8_t* mem);
 void OP_EOR(NES* this, uint8_t mem);
+void OP_LAX(NES* this, uint8_t mem);
 void OP_LDA(NES* this, uint8_t mem);
 void OP_LDX(NES* this, uint8_t mem);
 void OP_LDY(NES* this, uint8_t mem);
