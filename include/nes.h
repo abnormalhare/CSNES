@@ -105,6 +105,8 @@ typedef struct _NES {
     uint8_t PPU[0x10000];
 
     Header header;
+
+    uint32_t (*cycleFunc)(struct _NES*);
 } NES;
 
 typedef uint32_t (*opcodeFunc)(NES*);
@@ -121,6 +123,8 @@ extern char* fileName;
 
 NES* newNES(void);
 void NESLoadROM(NES* this, char const* filename);
-uint32_t Cycle(NES* this);
+
+extern int8_t special_plp;
+uint32_t CyclePLP(NES*);
 
 #endif

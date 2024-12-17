@@ -74,6 +74,14 @@ void OP_AND(NES* this, uint8_t mem) {
     this->p.neg  = (this->a > 0x7F);
 }
 
+void OP_ASL(NES* this, uint8_t* mem) {
+    this->p.flags = (*mem > 0x7F);
+    *mem <<= 1;
+
+    this->p.zero  = (*mem == 0);
+    this->p.neg   = (*mem > 0x7F);
+}
+
 void OP_CMP(NES* this, uint8_t mem) {
     int8_t val = this->a - mem;
 
@@ -102,42 +110,79 @@ void OP_DEC(NES* this, uint8_t* mem) {
     *mem--;
 
     this->p.zero = (*mem == 0);
-    this->p.neg  = (*mem > 127);
+    this->p.neg  = (*mem > 0x7F);
 }
 
 void OP_INC(NES* this, uint8_t* mem) {
     *mem++;
 
     this->p.zero = (*mem == 0);
-    this->p.neg  = (*mem > 127);
+    this->p.neg  = (*mem > 0x7F);
 }
 
 void OP_EOR(NES* this, uint8_t mem) {
     this->a ^= mem;
 
     this->p.zero = (this->a == 0);
-    this->p.neg  = (this->a > 127);
+    this->p.neg  = (this->a > 0x7F);
 }
 
 void OP_LDA(NES* this, uint8_t mem) {
     this->a = mem;
 
     this->p.zero = (this->a == 0);
-    this->p.neg  = (this->a > 127);
+    this->p.neg  = (this->a > 0x7F);
 }
 
 void OP_LDX(NES* this, uint8_t mem) {
     this->x = mem;
 
     this->p.zero = (this->x == 0);
-    this->p.neg  = (this->x > 127);
+    this->p.neg  = (this->x > 0x7F);
 }
 
 void OP_LDY(NES* this, uint8_t mem) {
     this->y = mem;
 
     this->p.zero = (this->y == 0);
-    this->p.neg  = (this->y > 127);
+    this->p.neg  = (this->y > 0x7F);
+}
+
+void OP_LSR(NES* this, uint8_t* mem) {
+    this->p.carry = *mem & 1;
+    *mem >>= 1;
+    
+    this->p.zero  = (*mem == 0);
+    this->p.neg   = (*mem > 0x7F);
+}
+
+void OP_ORA(NES* this, uint8_t mem) {
+    this->a |= mem;
+
+    this->p.zero = (mem == 0);
+    this->p.neg  = (mem > 0x7F);
+}
+
+void OP_ROL(NES* this, uint8_t* mem) {
+    uint8_t carry = (*mem > 0x7F);
+    this->p.carry = carry;
+
+    *mem <<= 1;
+    *mem |= carry;
+
+    this->p.zero  = (*mem == 0);
+    this->p.neg   = (*mem > 0x7F);
+}
+
+void OP_ROR(NES* this, uint8_t* mem) {
+    uint8_t carry = (*mem & 1);
+    this->p.carry = carry;
+
+    *mem >>= 1;
+    *mem |= carry << 7;
+
+    this->p.zero  = (*mem == 0);
+    this->p.neg   = (*mem > 0x7F);
 }
 
 // BRK
@@ -157,10 +202,7 @@ uint32_t OP_00(NES* this) {
 
 // ORA (d,x)
 uint32_t OP_01(NES* this) {
-    this->a |= index_dx(this, VAL1);
-
-    this->p.zero = (this->a == 0);
-    this->p.neg  = (this->a > 0x7F);
+    OP_ORA(this, index_dx(this, VAL1));
 
     this->pc += 2;
     return 6;
@@ -190,10 +232,7 @@ uint32_t OP_04(NES* this) {
 
 // ORA d
 uint32_t OP_05(NES* this) {
-    this->a |= this->RAM[VAL1];
-
-    this->p.zero = (this->a == 0);
-    this->p.neg  = (this->a > 0x7F);
+    OP_ORA(this, this->RAM[VAL1]);
 
     this->pc += 2;
     return 3;
@@ -201,12 +240,7 @@ uint32_t OP_05(NES* this) {
 
 // ASL d
 uint32_t OP_06(NES* this) {
-    uint8_t* value = &this->RAM[VAL1];
-
-    this->p.carry = (*value > 0x7F);
-    *value <<= 1;
-    this->p.zero  = (*value == 0);
-    this->p.neg   = (*value > 0x7F);
+    OP_ASL(this, &this->RAM[VAL1]);
     
     this->pc += 2;
     return 5;
@@ -238,6 +272,14 @@ uint32_t OP_08(NES* this) {
     return 3;
 }
 
+// ORA #
+uint32_t OP_09(NES* this) {
+    OP_ORA(this, VAL1);
+
+    this->pc += 2;
+    return 2;
+}
+
 // ASL
 uint32_t OP_0A(NES* this) {
     this->p.carry = (this->a > 0x7F);
@@ -249,13 +291,17 @@ uint32_t OP_0A(NES* this) {
     return 2;
 }
 
+// ORA a
+uint32_t OP_0D(NES* this) {
+    OP_ORA(this, this->RAM[LE_ADDR]);
+
+    this->pc += 3;
+    return 4;
+}
+
 // ASL a
 uint32_t OP_0E(NES* this) {
-    uint8_t* mem = &this->RAM[LE_ADDR];
-    this->p.carry = (*mem > 0x7F);
-    *mem <<= 1;
-    this->p.zero  = (*mem == 0);
-    this->p.neg   = (*mem > 0x7F);
+    OP_ASL(this, &this->RAM[LE_ADDR]);
 
     this->pc += 3;
     return 6;
@@ -272,13 +318,25 @@ uint32_t OP_10(NES* this) {
     }
 }
 
+// ORA (d),y
+uint32_t OP_11(NES* this) {
+    OP_ORA(this, index_dy(this, VAL1));
+
+    this->pc += 2;
+    CHECK_PAGE(5);
+}
+
+// ORA d,x
+uint32_t OP_15(NES* this) {
+    OP_ORA(this, index_zx(this, VAL1));
+
+    this->pc += 2;
+    return 4;
+}
+
 // ASL d,x
 uint32_t OP_16(NES* this) {
-    uint8_t* mem = &this->RAM[(uint8_t)(this->x + VAL1)];
-    this->p.carry = (*mem > 0x7F);
-    *mem <<= 1;
-    this->p.zero  = (*mem == 0);
-    this->p.neg   = (*mem > 0x7F);
+    OP_ASL(this, &this->RAM[(uint8_t)(VAL1 + this->x)]);
 
     this->pc += 2;
     return 6;
@@ -292,13 +350,25 @@ uint32_t OP_18(NES* this) {
     return 2;
 }
 
+// ORA a,y
+uint32_t OP_19(NES* this) {
+    OP_ORA(this, index_ay(this, LE_ADDR));
+
+    this->pc += 3;
+    CHECK_PAGE(4);
+}
+
+// ORA a,x
+uint32_t OP_1D(NES* this) {
+    OP_ORA(this, index_ax(this, LE_ADDR));
+
+    this->pc += 3;
+    CHECK_PAGE(4);
+}
+
 // ASL a,x
 uint32_t OP_1E(NES* this) {
-    uint8_t* mem = &this->RAM[LE_ADDR + this->x];
-    this->p.carry = (*mem > 0x7F);
-    *mem <<= 1;
-    this->p.zero  = (*mem == 0);
-    this->p.neg   = (*mem > 0x7F);
+    OP_ASL(this, &this->RAM[LE_ADDR + this->x]);
 
     this->pc += 3;
     return 7;
@@ -316,7 +386,7 @@ uint32_t OP_20(NES* this) {
 
 // AND (d,x)
 uint32_t OP_21(NES* this) {
-    OP_AND(this, index_dx(this, VAL1));
+    OP_AND(this, this->RAM[VAL1]);
     this->pc += 2;
     return 6;
 }
@@ -327,7 +397,7 @@ uint32_t OP_24(NES* this) {
     
     this->p.zero = (res == 0);
     this->p.over = ((res & 0x40) == 0x40);
-    this->p.neg  = (res > 127);
+    this->p.neg  = (res > 0x7F);
 
     this->pc += 2;
     return 3;
@@ -340,10 +410,51 @@ uint32_t OP_25(NES* this) {
     return 3;
 }
 
+// ROL d
+uint32_t OP_26(NES* this) {
+    OP_ROL(this, &this->RAM[VAL1]);
+
+    this->pc += 2;
+    return 5;
+}
+
+// PLP
+uint32_t OP_28(NES* this) {
+    Status p;
+    p.flags = pop(this);
+
+    this->p.carry = p.carry;
+    this->p.zero  = p.zero;
+    this->p.dec   = p.dec;
+    this->p.over  = p.over;
+    this->p.neg   = p.neg;
+
+    this->cycleFunc = CyclePLP;
+    special_plp = p.intd;
+
+    this->pc++;
+    return 4;
+}
+
 // AND d
 uint32_t OP_29(NES* this) {
     OP_AND(this, VAL1);
     this->pc += 2;
+    return 2;
+}
+
+// ROL
+uint32_t OP_2A(NES* this) {
+    uint8_t carry = (this->a > 0x7F);
+    this->p.carry = carry;
+
+    this->a <<= 1;
+    this->a |= carry;
+
+    this->p.zero  = (this->a == 0);
+    this->p.neg   = (this->a > 0x7F);
+
+    this->pc++;
     return 2;
 }
 
@@ -353,7 +464,7 @@ uint32_t OP_2C(NES* this) {
     
     this->p.zero = (res == 0);
     this->p.over = ((res & 0x40) == 0x40);
-    this->p.neg  = (res > 127);
+    this->p.neg  = (res > 0x7F);
 
     this->pc += 3;
     return 4;
@@ -364,6 +475,14 @@ uint32_t OP_2D(NES* this) {
     OP_AND(this, this->RAM[LE_ADDR]);
     this->pc += 3;
     return 4;
+}
+
+// ROL a
+uint32_t OP_2E(NES* this) {
+    OP_ROL(this, &this->RAM[LE_ADDR]);
+
+    this->pc += 3;
+    return 6;
 }
 
 // BMI
@@ -392,6 +511,14 @@ uint32_t OP_35(NES* this) {
     return 4;
 }
 
+// ROL d,x
+uint32_t OP_36(NES* this) {
+    OP_ROL(this, &this->RAM[(uint32_t)(VAL1 + this->x)]);
+
+    this->pc += 2;
+    return 6;
+}
+
 // AND a,y
 uint32_t OP_39(NES* this) {
     uint16_t addr = index_ay(this, LE_ADDR);
@@ -406,6 +533,30 @@ uint32_t OP_3D(NES* this) {
     OP_AND(this, addr);
     this->pc += 3;
     CHECK_PAGE(4);
+}
+
+// ROL a,x
+uint32_t OP_3E(NES* this) {
+    OP_ROL(this, &this->RAM[LE_ADDR + this->x]);
+
+    this->pc += 3;
+    return 7;
+}
+
+// RTI
+uint32_t OP_40(NES* this) {
+    Status p;
+    p.flags = pop(this);
+    this->p.carry = p.carry;
+    this->p.zero  = p.zero;
+    this->p.intd  = p.intd;
+    this->p.dec   = p.dec;
+    this->p.over  = p.over;
+    this->p.neg   = p.neg;
+
+    this->pc = (pop(this) << 8) + pop(this);
+
+    return 6;
 }
 
 // EOR (d,x)
@@ -424,11 +575,38 @@ uint32_t OP_45(NES* this) {
     return 3;
 }
 
+// LSR d
+uint32_t OP_46(NES* this) {
+    OP_LSR(this, &this->RAM[VAL1]);
+
+    this->pc += 2;
+    return 5;
+}
+
+// PHA
+uint32_t OP_48(NES* this) {
+    push(this, this->a);
+
+    this->pc++;
+    return 3;
+}
+
 // EOR #
 uint32_t OP_49(NES* this) {
     OP_EOR(this, VAL1);
 
     this->pc += 2;
+    return 2;
+}
+
+// LSR
+uint32_t OP_4A(NES* this) {
+    this->p.carry = this->a & 1;
+    this->a >>= 1;
+    this->p.zero  = (this->a == 0);
+    this->p.neg   = (this->a > 0x7F);
+
+    this->pc++;
     return 2;
 }
 
@@ -445,6 +623,14 @@ uint32_t OP_4D(NES* this) {
 
     this->pc += 3;
     return 4;
+}
+
+// LSR a
+uint32_t OP_4E(NES* this) {
+    OP_LSR(this, &this->RAM[LE_ADDR]);
+
+    this->pc += 3;
+    return 6;
 }
 
 // BVC
@@ -474,6 +660,14 @@ uint32_t OP_55(NES* this) {
     return 4;
 }
 
+// LSR d,x
+uint32_t OP_56(NES* this) {
+    OP_LSR(this, &this->RAM[(uint8_t)(VAL1 + this->x)]);
+
+    this->pc += 2;
+    return 6;
+}
+
 // CLI
 uint32_t OP_58(NES* this) {
     this->p.intd = 0;
@@ -498,6 +692,21 @@ uint32_t OP_5D(NES* this) {
     CHECK_PAGE(4);
 }
 
+// LSR a,x
+uint32_t OP_5E(NES* this) {
+    OP_LSR(this, &this->RAM[LE_ADDR + this->x]);
+
+    this->pc += 3;
+    return 7;
+}
+
+// RTS
+uint32_t OP_60(NES* this) {
+    this->pc = (pop(this) << 8) + pop(this);
+    this->pc++;
+    return 6;
+}
+
 // ADC (d,x)
 uint32_t OP_61(NES* this) {
     OP_ADC(this, index_dx(this, VAL1));
@@ -512,10 +721,44 @@ uint32_t OP_65(NES* this) {
     return 3;
 }
 
+// ROR d
+uint32_t OP_66(NES* this) {
+    OP_ROR(this, &this->RAM[VAL1]);
+
+    this->pc += 2;
+    return 5;
+}
+
+// PLA
+uint32_t OP_68(NES* this) {
+    this->a = pop(this);
+
+    this->p.zero = (this->a == 0);
+    this->p.neg  = (this->a > 0x7F);
+
+    this->pc++;
+    return 4;
+}
+
 // ADC #
 uint32_t OP_69(NES* this) {
     OP_ADC(this, VAL1);
     this->pc += 2;
+    return 2;
+}
+
+// ROR
+uint32_t OP_6A(NES* this) {
+    uint8_t carry = (this->a & 1);
+    this->p.carry = carry;
+
+    this->a >>= 1;
+    this->a |= carry << 7;
+
+    this->p.zero  = (this->a == 0);
+    this->p.neg   = (this->a > 0x7F);
+
+    this->pc++;
     return 2;
 }
 
@@ -552,11 +795,27 @@ uint32_t OP_6D(NES* this) {
     return 4;
 }
 
+// ROR a
+uint32_t OP_6E(NES* this) {
+    OP_ROR(this, &this->RAM[LE_ADDR]);
+
+    this->pc += 3;
+    return 6;
+}
+
 // ADC d,x
 uint32_t OP_75(NES* this) {
     OP_ADC(this, index_zx(this, VAL1));
     this->pc += 2;
     return 4;
+}
+
+// ROR d,x
+uint32_t OP_76(NES* this) {
+    OP_ROR(this, &this->RAM[(uint8_t)(VAL1 + this->x)]);
+
+    this->pc += 2;
+    return 6;
 }
 
 // ADC a,y
@@ -577,12 +836,20 @@ uint32_t OP_7D(NES* this) {
     CHECK_PAGE(4);
 }
 
+// ROR a,x
+uint32_t OP_7E(NES* this) {
+    OP_ROR(this, &this->RAM[LE_ADDR + this->x]);
+
+    this->pc += 3;
+    return 7;
+}
+
 // DEY
 uint32_t OP_88(NES* this) {
     this->y--;
 
     this->p.zero = (this->y == 0);
-    this->p.neg  = (this->y > 127);
+    this->p.neg  = (this->y > 0x7F);
 }
 
 // BCC
@@ -804,7 +1071,7 @@ uint32_t OP_C8(NES* this) {
     this->y--;
 
     this->p.zero = (this->y == 0);
-    this->p.neg  = (this->y > 127);
+    this->p.neg  = (this->y > 0x7F);
 }
 
 // CMP #
@@ -820,7 +1087,7 @@ uint32_t OP_CA(NES* this) {
     this->x--;
 
     this->p.zero = (this->x == 0);
-    this->p.neg  = (this->x > 127);
+    this->p.neg  = (this->x > 0x7F);
 
     this->pc++;
     return 2;
@@ -946,7 +1213,13 @@ uint32_t OP_E8(NES* this) {
     this->x--;
 
     this->p.zero = (this->x == 0);
-    this->p.neg  = (this->x > 127);
+    this->p.neg  = (this->x > 0x7F);
+}
+
+// NOP
+uint32_t OP_EA(NES* this) {
+    this->pc++;
+    return 2;
 }
 
 // CPX a

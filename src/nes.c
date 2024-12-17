@@ -8,6 +8,8 @@ uint8_t* chrRAM;
 uint8_t* chrNVRAM;
 char* fileName;
 
+int8_t special_plp;
+
 const opcodeFunc opTable[] = {
     OP_00, OP_01, OP_STP, OP_03, OP_04, OP_05, OP_06, OP_07, OP_08, OP_09, OP_0A, OP_0B, OP_0C, OP_0D, OP_0E, OP_0F,
     OP_10, OP_11, OP_STP, OP_13, OP_14, OP_15, OP_16, OP_17, OP_18, OP_19, OP_1A, OP_1B, OP_1C, OP_1D, OP_1E, OP_1F,
@@ -141,9 +143,32 @@ void NESLoadMem2(NES* this) {
     chrNVRAM = malloc(64 << this->header.chrnvram_size);
 }
 
+uint32_t Cycle(NES* this) {
+    return opTable[this->RAM[this->pc]](this);
+}
+
+uint32_t CyclePLP(NES* this) {
+    uint32_t val = opTable[this->RAM[this->pc]](this);
+
+    this->p.intd = special_plp;
+    this->cycleFunc = Cycle;
+
+    return val;
+}
+
 void NESLoadROM(NES* this, char const* filename) {
     FILE* file = fopen(filename, "rb");
     uint8_t header[0x10];
+
+    this->a = 0;
+    this->x = 0;
+    this->y = 0;
+
+    this->pc = 0xFFFC;
+    this->sp = 0xFF;
+    this->p.flags = 0;
+
+    this->cycleFunc = Cycle;
 
     fread(header, sizeof(uint8_t), 16, file);
 
@@ -170,8 +195,6 @@ void NESLoadROM(NES* this, char const* filename) {
     } else {
         NESLoadMem2(this);
     }
-}
 
-uint32_t Cycle(NES* this) {
-    return opTable[this->RAM[this->pc]](this);
+    // mapper & ppu stuff
 }
