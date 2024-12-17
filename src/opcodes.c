@@ -105,6 +105,13 @@ void OP_DEC(NES* this, uint8_t* mem) {
     this->p.neg  = (*mem > 127);
 }
 
+void OP_EOR(NES* this, uint8_t mem) {
+    this->a ^= VAL1;
+
+    this->p.zero = (this->a == 0);
+    this->p.neg  = (this->a > 127);
+}
+
 // BRK
 uint32_t OP_00(NES* this) {
     push(this, this->pc);
@@ -363,6 +370,38 @@ uint32_t OP_3D(NES* this) {
     CHECK_PAGE(4);
 }
 
+// EOR (d,x)
+uint32_t OP_41(NES* this) {
+    OP_EOR(this, index_dx(this, VAL1));
+
+    this->pc += 2;
+    return 6;
+}
+
+// EOR d
+uint32_t OP_49(NES* this) {
+    OP_EOR(this, this->RAM[VAL1]);
+
+    this->pc += 2;
+    return 3;
+}
+
+// EOR #
+uint32_t OP_49(NES* this) {
+    OP_EOR(this, VAL1);
+
+    this->pc += 2;
+    return 2;
+}
+
+// EOR a
+uint32_t OP_4D(NES* this) {
+    OP_EOR(this, (VAL1 << 4) + VAL2);
+
+    this->pc += 3;
+    return 4;
+}
+
 // BVC
 uint32_t OP_50(NES* this) {
     if (!this->p.over) {
@@ -374,12 +413,44 @@ uint32_t OP_50(NES* this) {
     }
 }
 
+// EOR (d),y
+uint32_t OP_51(NES* this) {
+    OP_EOR(this, index_dy(this, VAL1));
+
+    this->pc += 2;
+    CHECK_PAGE(5);
+}
+
+// EOR d,x
+uint32_t OP_55(NES* this) {
+    OP_EOR(this, index_zx(this, VAL1));
+
+    this->pc += 2;
+    return 4;
+}
+
 // CLI
 uint32_t OP_58(NES* this) {
     this->p.intd = 0;
 
     this->pc++;
     return 2;
+}
+
+// EOR a,y
+uint32_t OP_59(NES* this) {
+    OP_EOR(this, index_ay(this, (VAL1 << 4) + VAL2));
+
+    this->pc += 3;
+    CHECK_PAGE(4);
+}
+
+// EOR a,x
+uint32_t OP_5D(NES* this) {
+    OP_EOR(this, index_ax(this, (VAL1 << 4) + VAL2));
+
+    this->pc += 3;
+    CHECK_PAGE(4);
 }
 
 // ADC (d,x)
@@ -454,6 +525,14 @@ uint32_t OP_7D(NES* this) {
     CHECK_PAGE(4);
 }
 
+// DEY
+uint32_t OP_88(NES* this) {
+    this->y--;
+
+    this->p.zero = (this->y == 0);
+    this->p.neg  = (this->y > 127);
+}
+
 // BCC
 uint32_t OP_90(NES* this) {
     if (!this->p.carry) {
@@ -516,9 +595,28 @@ uint32_t OP_C5(NES* this) {
     return 3;
 }
 
+// DEC d
+uint32_t OP_C6(NES* this) {
+    OP_DEC(this, &this->RAM[VAL1]);
+
+    this->pc += 2;
+    return 5;
+}
+
 // CMP #
 uint32_t OP_C9(NES* this) {
     OP_CMP(this, VAL1);
+
+    this->pc++;
+    return 2;
+}
+
+// DEX
+uint32_t OP_CA(NES* this) {
+    this->x--;
+
+    this->p.zero = (this->x == 0);
+    this->p.neg  = (this->x > 127);
 
     this->pc++;
     return 2;
@@ -538,6 +636,14 @@ uint32_t OP_CD(NES* this) {
 
     this->pc += 3;
     return 4;
+}
+
+// DEC a
+uint32_t OP_CE(NES* this) {
+    OP_DEC(this, &this->RAM[(VAL1 << 4) + VAL2]);
+
+    this->pc += 3;
+    return 6;
 }
 
 // BNE
@@ -567,6 +673,14 @@ uint32_t OP_D5(NES* this) {
     return 4;
 }
 
+// DEC d,x
+uint32_t OP_D6(NES* this) {
+    OP_DEC(this, &this->RAM[(uint8_t)(this->x + VAL1)]);
+
+    this->pc += 2;
+    return 6;
+}
+
 // CLD
 uint32_t OP_D8(NES* this) {
     this->p.dec = 0;
@@ -589,6 +703,14 @@ uint32_t OP_DD(NES* this) {
 
     this->pc += 3;
     CHECK_PAGE(4);
+}
+
+// DEC a,x
+uint32_t OP_DE(NES* this) {
+    OP_DEC(this, &this->RAM[(VAL1 << 4) + VAL2 + this->x]);
+
+    this->pc += 3;
+    return 7;
 }
 
 // CPX #
