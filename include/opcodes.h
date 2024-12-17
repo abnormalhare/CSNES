@@ -2,6 +2,7 @@
 #define OPCODES_H
 
 #include "nes.h"
+#include "opfuncs.h"
 
 #define VAL1 this->RAM[this->pc + 1]
 #define VAL2 this->RAM[this->pc + 2]

@@ -4,6 +4,7 @@
         "*.s": "plaintext",
         "*.json": "jsonc",
         "*.c": "c",
-        "cstdint": "cpp"
+        "cstdint": "cpp",
+        "opcodes.h": "c"
     }
 }

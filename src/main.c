@@ -25,10 +25,9 @@ int main(int argc, char* argv[]) {
 
     lastTime = timeInMilliseconds();
     while (1) {
-        delay += nes->cycleFunc(nes);
-        if (delay < 29,830) {
-            while (timeInMilliseconds() - lastTime < 16667);
-        }
+        delay = nes->cycleFunc(nes);
+        while (timeInMilliseconds() - lastTime < delay);
+        lastTime = timeInMilliseconds();
     }
 
     return 0;
