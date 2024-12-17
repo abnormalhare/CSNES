@@ -496,6 +496,9 @@ uint32_t OP_4B(NES* this) {
 
     this->p.zero  = (this->a == 0);
     this->p.neg   = (this->a > 0x7F);
+
+    this->pc += 2;
+    return 2;
 }
 
 // JMP a
