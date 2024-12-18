@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "cycle.h"
+
 typedef struct _status {
     union {
         uint8_t carry : 1;
@@ -92,7 +94,7 @@ typedef struct _header {
     uint8_t reserved5 : 2;
 } Header;
 
-typedef struct _ppu {
+typedef struct _ppuregs {
     uint8_t PPUCTRL;
     uint8_t PPUMASK;
     uint8_t PPUSTATUS;
@@ -101,7 +103,11 @@ typedef struct _ppu {
     uint8_t PPUSCROLL;
     uint8_t PPUADDR;
     uint8_t PPUDATA;
-} Ppu;
+} PpuRegs;
+
+typedef struct _ppu {
+    char unk[0x4];
+} PPU;
 
 typedef struct _NES {
     uint8_t a;
@@ -113,16 +119,18 @@ typedef struct _NES {
     Status p;
 
     uint8_t RAM[0x800];
-    Ppu PPU;
+    PpuRegs PPURegs;
     uint8_t SRAM[0x2000];
     uint8_t PRGROM[0x8000];
 
     Header header;
 
-    uint32_t (*cycleFunc)(struct _NES*);
+    uint64_t cycTime;
+    void (*cycleFunc)(struct _NES*);
+    uint8_t jam;
 } NES;
 
-typedef uint32_t (*opcodeFunc)(NES*);
+typedef void (*opcodeFunc)(NES*);
 
 #include "opcodes.h"
 

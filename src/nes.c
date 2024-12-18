@@ -189,7 +189,7 @@ void NESLoadRAM(NES* this, uint8_t* bytes) {
     }
 
     // temporary
-    this->PPU.PPUSTATUS = 0xFF;
+    this->PPURegs.PPUSTATUS = 0xFF;
 }
 
 void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
@@ -203,8 +203,6 @@ void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
     this->pc = 0xFFFC;
     this->sp = 0xFF;
     this->p.flags = 0;
-
-    this->cycleFunc = Cycle;
 
     fread(header, sizeof(uint8_t), 0x10, file);
 
@@ -243,6 +241,9 @@ void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
     NESLoadRAM(this, fullFile);
 
     // mapper & ppu stuff
+
+    this->cycleFunc = Cycle;
+    this->cycTime = timeInCycles();
 }
 
 uint16_t lastPC;
@@ -259,18 +260,17 @@ void debugPrint(NES* this) {
     lastPC = this->pc;
 }
 
-uint32_t Cycle(NES* this) {
+void Cycle(NES* this) {
+    uint32_t cycleCount;
+
     debugPrint(this);
     opTable[*read(this, this->pc)](this);
-    // ppu cycle 3 times
 }
 
-uint32_t CyclePLP(NES* this) {
+void CyclePLP(NES* this) {
     debugPrint(this);
-    uint32_t val = opTable[*read(this, this->pc)](this);
+    opTable[*read(this, this->pc)](this);
 
     this->p.intd = special_plp;
     this->cycleFunc = Cycle;
-
-    return val;
 }

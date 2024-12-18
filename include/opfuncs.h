@@ -3,6 +3,7 @@
 
 #include <time.h>
 #include "nes.h"
+#include "cycle.h"
 
 extern uint32_t page_crossed;
 

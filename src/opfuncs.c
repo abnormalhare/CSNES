@@ -2,6 +2,11 @@
 
 uint32_t page_crossed = 0;
 
+void wait(NES* this) {
+    while (timeInCycles() - this->cycTime < 1);
+    this->cycTime = timeInCycles();
+}
+
 void write(NES* this, uint16_t addr, uint8_t byte) {
     uint16_t pos;
     if (addr < 0x2000) {
@@ -10,13 +15,13 @@ void write(NES* this, uint16_t addr, uint8_t byte) {
     } else if (addr < 0x4000) {
         pos = (addr - 0x2000) % 8;
         switch (pos) {
-            case 0: this->PPU.PPUCTRL   = byte; break;
-            case 1: this->PPU.PPUMASK   = byte; break;
-            case 3: this->PPU.OAMADDR   = byte; break;
-            case 4: this->PPU.OAMDATA   = byte; break;
-            case 5: this->PPU.PPUSCROLL = byte; break;
-            case 6: this->PPU.PPUADDR   = byte; break;
-            case 7: this->PPU.PPUDATA   = byte; break;
+            case 0: this->PPURegs.PPUCTRL   = byte; break;
+            case 1: this->PPURegs.PPUMASK   = byte; break;
+            case 3: this->PPURegs.OAMADDR   = byte; break;
+            case 4: this->PPURegs.OAMDATA   = byte; break;
+            case 5: this->PPURegs.PPUSCROLL = byte; break;
+            case 6: this->PPURegs.PPUADDR   = byte; break;
+            case 7: this->PPURegs.PPUDATA   = byte; break;
         }
     } else if (addr < 0x8000) {
 
@@ -28,6 +33,8 @@ void write(NES* this, uint16_t addr, uint8_t byte) {
 
         this->PRGROM[pos] = byte;
     }
+
+    wait(this);
 }
 
 uint8_t* read(NES* this, uint16_t addr) {
@@ -40,9 +47,9 @@ uint8_t* read(NES* this, uint16_t addr) {
     } else if (addr < 0x4000) {
         pos = (addr - 0x2000) % 8;
         switch (pos) {
-            case 2: byte = &this->PPU.PPUSTATUS; break;
-            case 4: byte = &this->PPU.OAMDATA;   break;
-            case 7: byte = &this->PPU.PPUDATA;   break;
+            case 2: byte = &this->PPURegs.PPUSTATUS; break;
+            case 4: byte = &this->PPURegs.OAMDATA;   break;
+            case 7: byte = &this->PPURegs.PPUDATA;   break;
             default:
                 printf("ERROR: read on non-readable PPU instruction (temporary)");
                 exit(EXIT_FAILURE);
@@ -58,6 +65,7 @@ uint8_t* read(NES* this, uint16_t addr) {
         byte = &this->PRGROM[pos];
     }
 
+    wait(this);
     return byte;
 }
 
