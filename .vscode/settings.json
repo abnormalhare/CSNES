@@ -9,6 +9,7 @@
         "opfuncs.h": "c",
         "iosfwd": "c",
         "limits": "c",
-        "__config": "c"
+        "__config": "c",
+        "compare": "c"
     }
 }

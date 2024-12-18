@@ -130,7 +130,7 @@ uint32_t OP_0F(NES* this) {
 // BPL
 uint32_t OP_10(NES* this) {
     if (!this->p.neg) {
-        this->pc += VAL1 + 2;
+        this->pc += (int8_t)(VAL1) + 2;
         CHECK_PAGE(3);
     } else {
         this->pc += 2;
@@ -236,10 +236,10 @@ uint32_t OP_1F(NES* this) {
 
 // JSR
 uint32_t OP_20(NES* this) {
-    push(this, this->pc);
+    push(this, this->pc + 2);
     push(this, this->pc >> 8);
 
-    this->pc = *read(this, LE_ADDR);
+    this->pc = LE_ADDR;
     return 6;
 }
 
@@ -375,7 +375,7 @@ uint32_t OP_2F(NES* this) {
 // BMI
 uint32_t OP_30(NES* this) {
     if (this->p.neg) {
-        this->pc += VAL1 + 2;
+        this->pc += (int8_t)(VAL1) + 2;
         CHECK_PAGE(3);
     } else {
         this->pc += 2;
@@ -577,7 +577,7 @@ uint32_t OP_4B(NES* this) {
 
 // JMP a
 uint32_t OP_4C(NES* this) {
-    this->pc = *read(this, VAL1);
+    this->pc = LE_ADDR;
     return 3;
 }
 
@@ -605,7 +605,7 @@ uint32_t OP_4F(NES* this) {
 // BVC
 uint32_t OP_50(NES* this) {
     if (!this->p.over) {
-        this->pc += VAL1 + 2;
+        this->pc += (int8_t)(VAL1) + 2;
         CHECK_PAGE(3);
     } else {
         this->pc += 2;
@@ -820,7 +820,7 @@ uint32_t OP_6C(NES* this) {
 // BVS
 uint32_t OP_70(NES* this) {
     if (this->p.over) {
-        this->pc += VAL1 + 2;
+        this->pc += (int8_t)(VAL1) + 2;
         CHECK_PAGE(3);
     } else {
         this->pc += 2;
@@ -959,11 +959,7 @@ uint32_t OP_80(NES* this) {
 
 // STA (d,x)
 uint32_t OP_81(NES* this) {
-    uint16_t r1 = *index_zx(this, VAL1);
-    uint16_t r2 = *index_zx(this, VAL1 + 1);
-
-    this->RAM[(r1 + r2) * 256] = this->a;
-
+    write(this, *index_dx(this, VAL1), this->a);
     this->pc += 2;
     return 6;
 }
@@ -1015,6 +1011,9 @@ uint32_t OP_88(NES* this) {
 
     this->p.zero = (this->y == 0);
     this->p.neg  = (this->y > 0x7F);
+
+    this->pc++;
+    return 2;
 }
 
 // SKB #
@@ -1076,7 +1075,7 @@ uint32_t OP_8F(NES* this) {
 // BCC
 uint32_t OP_90(NES* this) {
     if (!this->p.carry) {
-        this->pc += VAL1 + 2;
+        this->pc += (int8_t)(VAL1) + 2;
         CHECK_PAGE(3);
     } else {
         this->pc += 2;
@@ -1332,7 +1331,7 @@ uint32_t OP_AF(NES* this) {
 // BCS
 uint32_t OP_B0(NES* this) {
     if (this->p.carry) {
-        this->pc += VAL1 + 2;
+        this->pc += (int8_t)(VAL1) + 2;
         CHECK_PAGE(3);
     } else {
         this->pc += 2;
@@ -1505,6 +1504,9 @@ uint32_t OP_C8(NES* this) {
 
     this->p.zero = (this->y == 0);
     this->p.neg  = (this->y > 0x7F);
+
+    this->pc++;
+    return 2;
 }
 
 // CMP #
@@ -1572,7 +1574,7 @@ uint32_t OP_CF(NES* this) {
 // BNE
 uint32_t OP_D0(NES* this) {
     if (this->p.zero) {
-        this->pc += VAL1 + 2;
+        this->pc += (int8_t)(VAL1) + 2;
         CHECK_PAGE(3);
     } else {
         this->pc += 2;
@@ -1793,7 +1795,7 @@ uint32_t OP_EF(NES* this) {
 // BEQ
 uint32_t OP_F0(NES* this) {
     if (this->p.zero) {
-        this->pc += VAL1 + 2;
+        this->pc += (int8_t)(VAL1) + 2;
         CHECK_PAGE(3);
     } else {
         this->pc += 2;

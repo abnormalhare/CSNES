@@ -1,6 +1,7 @@
 #ifndef OPFUNCS_H
 #define OPFUNCS_H
 
+#include <time.h>
 #include "nes.h"
 
 extern uint32_t page_crossed;
