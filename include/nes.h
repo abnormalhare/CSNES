@@ -122,7 +122,7 @@ extern uint8_t* chrNVRAM;
 extern char* fileName;
 
 NES* newNES(void);
-void NESLoadROM(NES* this, char const* filename);
+void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize);
 
 extern int8_t special_plp;
 uint32_t CyclePLP(NES*);

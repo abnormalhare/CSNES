@@ -19,20 +19,12 @@ uint8_t index_zy(NES* this, uint8_t byte) {
 }
 
 uint8_t index_ax(NES* this, uint16_t addr) {
-    if ((addr % 256) + this->x > 0xFF) {
-        page_crossed = 1;
-    } else {
-        page_crossed = 0;
-    }
+    page_crossed = (addr % 256) + this->x > 0xFF;
     return this->RAM[this->x + addr];
 }
 
 uint8_t index_ay(NES* this, uint16_t addr) {
-    if ((addr % 256) + this->y > 0xFF) {
-        page_crossed = 1;
-    } else {
-        page_crossed = 0;
-    }
+    page_crossed = (addr % 256) + this->y > 0xFF;
     return this->RAM[this->y + addr];
 }
 
@@ -45,11 +37,8 @@ uint8_t index_dx(NES* this, uint8_t ind) {
 
 uint8_t index_dy(NES* this, uint8_t ind) {
     uint16_t r = this->RAM[ind] + this->RAM[(ind + 1) % 256] * 256;
-    if ((r % 256) + this->y > 0xFF) {
-        page_crossed = 1;
-    } else {
-        page_crossed = 0;
-    }
+    page_crossed = ((r % 256) + this->y > 0xFF);
+
     return this->RAM[r + this->y];
 }
 

@@ -38,6 +38,19 @@ NES* newNES(void) {
     return nes;
 }
 
+uint32_t Cycle(NES* this) {
+    return opTable[this->RAM[this->pc]](this);
+}
+
+uint32_t CyclePLP(NES* this) {
+    uint32_t val = opTable[this->RAM[this->pc]](this);
+
+    this->p.intd = special_plp;
+    this->cycleFunc = Cycle;
+
+    return val;
+}
+
 void NESLoadHeader(NES* this, uint8_t header[]) {
     uint8_t flags = header[6];
     this->header.mirror_mode = (flags & 0x01) >> 0;
@@ -113,14 +126,14 @@ void NESLoadMem2(NES* this) {
 
         if (expn > 26) {
             printf("ERROR: Could not read '%s', PRG-ROM size too high!");
-            return;
+            exit(EXIT_FAILURE);
         }
 
         ROMSize = (2 << expn) * (mult * 2 + 1);
     } else {
         ROMSize = this->header.prgrom_size + (this->header.prg_rom_hi << 0x8);
     }
-    prgROM = malloc(ROMSize * sizeof(uint8_t));
+    prgROM = malloc(ROMSize * sizeof(uint8_t) * 0x4000);
 
     if (this->header.chr_rom_hi == 0xF) {
         uint32_t mult = (this->header.chrrom_size & 0b00000011);
@@ -128,14 +141,14 @@ void NESLoadMem2(NES* this) {
 
         if (expn > 26) {
             printf("ERROR: Could not read '%s', CHR-ROM size too high!");
-            return;
+            exit(EXIT_FAILURE);
         }
         
         ROMSize = (2 << expn) * (mult * 2 + 1);
     } else {
         ROMSize = this->header.chrrom_size + (this->header.chr_rom_hi << 0x8);
     }
-    chrROM = malloc(ROMSize * sizeof(uint8_t));
+    chrROM = malloc(ROMSize * sizeof(uint8_t) * 0x2000);
 
     prgRAM = malloc(64 << this->header.prgram_size);
     prgNVRAM = malloc(64 << this->header.prgnvram_size);
@@ -143,48 +156,76 @@ void NESLoadMem2(NES* this) {
     chrNVRAM = malloc(64 << this->header.chrnvram_size);
 }
 
-uint32_t Cycle(NES* this) {
-    return opTable[this->RAM[this->pc]](this);
+void NESLoadRAM(NES* this, uint8_t* bytes) {
+    int16_t rAddr = 0;
+    int16_t fAddr = 0;
+    int i;
+
+    // if (this->header.has_battery) {
+    //     rAddr = 0x6000;
+    // }
+
+    if (this->header.has_trainer) {
+        rAddr = 0x7000;
+        for (i = 0; i < 0x200; i++, rAddr++, fAddr++) {
+            this->RAM[rAddr] = bytes[i];
+        }
+    }
+
+    rAddr = 0x8000;
+    if (this->header.prgrom_size == 1) {
+        for (i = 0; i < 0x4000; i++, rAddr++, fAddr++) {
+            prgROM[i] = this->RAM[rAddr] = bytes[fAddr];
+        }
+
+        fAddr -= 0x4000;
+        for (i = 0; i < 0x4000; i++, rAddr++, fAddr++) {
+            this->RAM[rAddr] = bytes[fAddr];
+        }
+    } else {
+        for (i = 0; i < 0x8000; i++, rAddr++, fAddr++) {
+            prgROM[i] = this->RAM[rAddr] = bytes[fAddr];
+        }
+        for (; i < this->header.prgrom_size * 0x4000; i++, fAddr++) {
+            prgROM[i] = bytes[fAddr];
+        }
+    }
+
+    for (i = 0; i < this->header.chrrom_size * 0x2000; i++, fAddr++) {
+        chrROM[i] = bytes[fAddr];
+    }
 }
 
-uint32_t CyclePLP(NES* this) {
-    uint32_t val = opTable[this->RAM[this->pc]](this);
-
-    this->p.intd = special_plp;
-    this->cycleFunc = Cycle;
-
-    return val;
-}
-
-void NESLoadROM(NES* this, char const* filename) {
-    FILE* file = fopen(filename, "rb");
+void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
     uint8_t header[0x10];
+    uint8_t* fullFile;
 
     this->a = 0;
     this->x = 0;
     this->y = 0;
 
-    this->pc = 0xFFFC;
+    this->pc = 0xC000;
     this->sp = 0xFF;
     this->p.flags = 0;
 
     this->cycleFunc = Cycle;
 
-    fread(header, sizeof(uint8_t), 16, file);
+    fread(header, sizeof(uint8_t), 0x10, file);
 
     if (!(header[0] == 'N' && header[1] == 'E' && header[2] == 'S' && header[3] == '\x1A')) {
         printf("ERROR: Could not read '%s', incorrect format.", filename);
-        return;
+        exit(EXIT_FAILURE);
     }
 
     if (header[4] == 0) {
         printf("ERROR: Could not read '%s', invalid PRG ROM.", filename);
-        return;
+        exit(EXIT_FAILURE);
     }
     this->header.prgrom_size = header[4];
 
     if (header[5] == 0) {
         printf("ERROR: Could not read '%s', invalid CHR ROM.", filename);
+        exit(EXIT_FAILURE);
     }
     this->header.chrrom_size = header[5];
 
@@ -195,6 +236,11 @@ void NESLoadROM(NES* this, char const* filename) {
     } else {
         NESLoadMem2(this);
     }
+
+    fullFile = malloc((filesize - 0x10) * sizeof(uint8_t));
+    fread(fullFile, sizeof(uint8_t), filesize - 0x10, file);
+
+    NESLoadRAM(this, fullFile);
 
     // mapper & ppu stuff
 }

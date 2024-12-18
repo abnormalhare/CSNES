@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "-g",
+                "src/main.c",
+                "src/nes.c",
+                "src/opcodes.c",
+                "src/opfuncs.c",
+                "-O2",
+                "-Iinclude",
+                "-o", "CSNES"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"],
+            "detail": "A task to compile C files using gcc"
+        }
+    ]
+}

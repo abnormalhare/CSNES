@@ -1083,10 +1083,16 @@ uint32_t OP_8A(NES* this) {
     return 2;
 }
 
-// // XAA #
-// uint32_t OP_8B(NES* this) {
-//     this->a = (this->a | 0xEE)
-// }
+// XAA # UNSTABLE
+uint32_t OP_8B(NES* this) {
+    this->a = (this->a | 0xEE) & this->x & VAL1;
+
+    this->p.zero = (this->a == 0);
+    this->p.neg  = (this->a > 0x7F);
+
+    this->pc += 2;
+    return 2;
+}
 
 // STY a
 uint32_t OP_8C(NES* this) {
@@ -1133,6 +1139,20 @@ uint32_t OP_91(NES* this) {
     this->RAM[r + this->y] = this->a;
     this->pc += 2;
     return 6;
+}
+
+// AHX (d),y UNSTABLE, GUESS
+uint32_t OP_93(NES* this) {
+    uint16_t r = this->RAM[VAL1] + this->RAM[(VAL1 + 1) % 256] * 256;
+    if ((r % 256) + this->y > 0xFF) {
+        page_crossed = 1;
+    } else {
+        page_crossed = 0;
+    }
+    this->RAM[r + this->y] = this->a & this->x & ((VAL1 >> 4) + 1);
+
+    this->pc += 2;
+    CHECK_PAGE(6);
 }
 
 // STY d,x
@@ -1187,9 +1207,49 @@ uint32_t OP_9A(NES* this) {
     return 2;
 }
 
+// TAS a,y UNSTABLE
+uint32_t OP_9B(NES* this) {
+    uint16_t addr = LE_ADDR + this->y;
+
+    this->sp = this->a & this->x;
+    this->RAM[addr] = this->a & this->x & ((addr >> 4) + 1);
+
+    this->pc += 3;
+    return 5;
+}
+
+// SHY a,x UNSTABLE
+uint32_t OP_9C(NES* this) {
+    uint16_t addr = LE_ADDR + this->x;
+
+    this->RAM[addr] = this->y & ((addr >> 4) + 1);
+
+    this->pc += 3;
+    return 5;
+}
+
 // STA a,x
 uint32_t OP_9D(NES* this) {
     this->RAM[LE_ADDR + this->x] = this->a;
+    this->pc += 3;
+    return 5;
+}
+
+// SHX a,y UNSTABLE
+uint32_t OP_9E(NES* this) {
+    uint16_t addr = LE_ADDR + this->y;
+
+    this->RAM[addr] = this->x & ((addr >> 4) + 1);
+
+    this->pc += 3;
+    return 5;
+}
+
+// AHX a,y UNSTABLE, GUESS
+uint32_t OP_9F(NES* this) {
+    uint16_t addr = LE_ADDR + this->y;
+    this->RAM[addr] = this->a & this->x & ((addr >> 4) + 1);
+
     this->pc += 3;
     return 5;
 }
@@ -1276,6 +1336,15 @@ uint32_t OP_AA(NES* this) {
     this->p.neg  = (this->x > 0x7F);
     
     this->pc++;
+    return 2;
+}
+
+// LXA # UNSTABLE
+uint32_t OP_AB(NES* this) {
+    this->a = (this->a | 0xEE) & VAL1;
+    this->x = this->a;
+
+    this->pc += 2;
     return 2;
 }
 
@@ -1383,6 +1452,15 @@ uint32_t OP_BA(NES* this) {
     
     this->pc++;
     return 2;
+}
+
+// LAS a,y UNSTABLE
+uint32_t OP_BB(NES* this) {
+    this->sp = this->x = this->a = this->RAM[LE_ADDR + this->y] & this->sp;
+    page_crossed = ((uint8_t)(LE_ADDR) + this->y > 0xFF);
+
+    this->pc += 3;
+    CHECK_PAGE(4);
 }
 
 // LDY a
@@ -1736,6 +1814,13 @@ uint32_t OP_E9(NES* this) {
 // NOP
 uint32_t OP_EA(NES* this) {
     this->pc++;
+    return 2;
+}
+
+// USBC
+uint32_t OP_EB(NES* this) {
+    OP_SBC(this, VAL1);
+    this->pc += 2;
     return 2;
 }
 
