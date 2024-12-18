@@ -5,6 +5,10 @@
         "*.json": "jsonc",
         "*.c": "c",
         "cstdint": "cpp",
-        "opcodes.h": "c"
+        "opcodes.h": "c",
+        "opfuncs.h": "c",
+        "iosfwd": "c",
+        "limits": "c",
+        "__config": "c"
     }
 }

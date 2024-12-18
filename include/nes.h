@@ -92,6 +92,17 @@ typedef struct _header {
     uint8_t reserved5 : 2;
 } Header;
 
+typedef struct _ppu {
+    uint8_t PPUCTRL;
+    uint8_t PPUMASK;
+    uint8_t PPUSTATUS;
+    uint8_t OAMADDR;
+    uint8_t OAMDATA;
+    uint8_t PPUSCROLL;
+    uint8_t PPUADDR;
+    uint8_t PPUDATA;
+} Ppu;
+
 typedef struct _NES {
     uint8_t a;
     uint8_t x;
@@ -101,8 +112,10 @@ typedef struct _NES {
     uint8_t sp;
     Status p;
 
-    uint8_t RAM[0x10000];
-    uint8_t PPU[0x10000];
+    uint8_t RAM[0x800];
+    Ppu PPU;
+    uint8_t SRAM[0x2000];
+    uint8_t PRGROM[0x8000];
 
     Header header;
 
@@ -125,6 +138,7 @@ NES* newNES(void);
 void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize);
 
 extern int8_t special_plp;
-uint32_t CyclePLP(NES*);
+uint32_t Cycle(NES* this);
+uint32_t CyclePLP(NES* this);
 
 #endif

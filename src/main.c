@@ -41,8 +41,10 @@ int main(int argc, char* argv[]) {
     nes = newNES();
     NESLoadROM(nes, file, filename, filesize);
 
+    setupPC(nes);
+
     lastTime = timeInCycles();
-    while (fgetc(file) != EOF) {
+    while (1) {
         delay = nes->cycleFunc(nes);
         if (delay == -1) break;
         while (timeInCycles() - lastTime < delay);

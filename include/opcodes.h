@@ -4,9 +4,9 @@
 #include "nes.h"
 #include "opfuncs.h"
 
-#define VAL1 this->RAM[this->pc + 1]
-#define VAL2 this->RAM[this->pc + 2]
-#define LE_ADDR this->RAM[this->pc + 1] + (this->RAM[this->pc + 2] << 8)
+#define VAL1 *read(this, this->pc + 1)
+#define VAL2 *read(this, this->pc + 2)
+#define LE_ADDR *read(this, this->pc + 1) + (*read(this, this->pc + 2) << 8)
 #define CHECK_PAGE(f)     \
     if (page_crossed) {   \
         return f + 1;     \

@@ -2,44 +2,107 @@
 
 uint32_t page_crossed = 0;
 
+void write(NES* this, uint16_t addr, uint8_t byte) {
+    uint16_t pos;
+    if (addr < 0x2000) {
+        pos = addr % 0x800;
+        this->RAM[pos] = byte;
+    } else if (addr < 0x4000) {
+        pos = (addr - 0x2000) % 8;
+        switch (pos) {
+            case 0: this->PPU.PPUCTRL   = byte; break;
+            case 1: this->PPU.PPUMASK   = byte; break;
+            case 3: this->PPU.OAMADDR   = byte; break;
+            case 4: this->PPU.OAMDATA   = byte; break;
+            case 5: this->PPU.PPUSCROLL = byte; break;
+            case 6: this->PPU.PPUADDR   = byte; break;
+            case 7: this->PPU.PPUDATA   = byte; break;
+        }
+    } else if (addr < 0x8000) {
+
+    } else {
+        pos = (addr - 0x8000);
+        if (this->header.prgrom_size == 1) { // temporary NROM case
+            pos %= 0x4000;
+        }
+
+        this->PRGROM[pos] = byte;
+    }
+}
+
+uint8_t* read(NES* this, uint16_t addr) {
+    uint16_t pos;
+    uint8_t* byte;
+
+    if (addr < 0x2000) {
+        pos = addr % 0x800;
+        byte = &this->RAM[pos];
+    } else if (addr < 0x4000) {
+        pos = (addr - 0x2000) % 8;
+        switch (pos) {
+            case 2: byte = &this->PPU.PPUSTATUS; break;
+            case 4: byte = &this->PPU.OAMDATA;   break;
+            case 7: byte = &this->PPU.PPUDATA;   break;
+            default:
+                printf("ERROR: read on non-readable PPU instruction (temporary)");
+                exit(EXIT_FAILURE);
+        }
+    } else if (addr < 0x8000) {
+
+    } else {
+        pos = (addr - 0x8000);
+        if (this->header.prgrom_size == 1) { // temporary NROM case
+            pos %= 0x4000;
+        }
+
+        byte = &this->PRGROM[pos];
+    }
+
+    return byte;
+}
+
+void setupPC(NES* this) {
+    this->pc = *read(this, this->pc) + (*read(this, this->pc + 1) << 8);
+}
+
 void push(NES* this, uint8_t byte) {
-    this->RAM[this->sp--] = byte;
+    write(this, this->sp--, byte);
 }
 
-uint8_t pop(NES* this) {
-    return this->RAM[++this->sp];
+uint8_t* pop(NES* this) {
+    return read(this, ++this->sp);
 }
 
-uint8_t index_zx(NES* this, uint8_t byte) {
-    return this->RAM[(this->x + byte) % 256];
+uint8_t* index_zx(NES* this, uint8_t byte) {
+    return read(this, (uint8_t)(this->x + byte));
 }
 
-uint8_t index_zy(NES* this, uint8_t byte) {
-    return this->RAM[(this->y + byte) % 256];
+uint8_t* index_zy(NES* this, uint8_t byte) {
+    return read(this, (uint8_t)(this->y + byte));
 }
 
-uint8_t index_ax(NES* this, uint16_t addr) {
+uint8_t* index_ax(NES* this, uint16_t addr) {
     page_crossed = (addr % 256) + this->x > 0xFF;
-    return this->RAM[this->x + addr];
+    return read(this, this->x + addr);
 }
 
-uint8_t index_ay(NES* this, uint16_t addr) {
+uint8_t* index_ay(NES* this, uint16_t addr) {
     page_crossed = (addr % 256) + this->y > 0xFF;
-    return this->RAM[this->y + addr];
+    return read(this, this->y + addr);
 }
 
-uint8_t index_dx(NES* this, uint8_t ind) {
-    uint16_t r1 = index_zx(this, ind);
-    uint16_t r2 = index_zx(this, ind + 1);
+uint8_t* index_dx(NES* this, uint8_t ind) {
+    uint16_t r1 = *index_zx(this, ind);
+    uint16_t r2 = *index_zx(this, ind + 1);
 
-    return this->RAM[(r1 + r2) * 256];
+    return read(this, (r1 + r2) * 256);
 }
 
-uint8_t index_dy(NES* this, uint8_t ind) {
-    uint16_t r = this->RAM[ind] + this->RAM[(ind + 1) % 256] * 256;
+uint8_t* index_dy(NES* this, uint8_t ind) {
+    uint16_t r = *read(this, ind) + *read(this, (ind + 1) % 256) * 256;
     page_crossed = ((r % 256) + this->y > 0xFF);
 
-    return this->RAM[r + this->y];
+    return read(this, r + this->y);
 }
 
 void OP_ADC(NES* this, uint16_t mem) {

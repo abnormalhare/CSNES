@@ -1,11 +1,11 @@
 #include "nes.h"
 
-uint8_t* prgROM;
-uint8_t* chrROM;
-uint8_t* prgRAM;
-uint8_t* prgNVRAM;
-uint8_t* chrRAM;
-uint8_t* chrNVRAM;
+uint8_t* prgROM = NULL;
+uint8_t* chrROM = NULL;
+uint8_t* prgRAM = NULL;
+uint8_t* prgNVRAM = NULL;
+uint8_t* chrRAM = NULL;
+uint8_t* chrNVRAM = NULL;
 char* fileName;
 
 int8_t special_plp;
@@ -36,19 +36,6 @@ NES* newNES(void) {
     nes->pc = 0xFFFC;
 
     return nes;
-}
-
-uint32_t Cycle(NES* this) {
-    return opTable[this->RAM[this->pc]](this);
-}
-
-uint32_t CyclePLP(NES* this) {
-    uint32_t val = opTable[this->RAM[this->pc]](this);
-
-    this->p.intd = special_plp;
-    this->cycleFunc = Cycle;
-
-    return val;
 }
 
 void NESLoadHeader(NES* this, uint8_t header[]) {
@@ -115,6 +102,19 @@ void NESLoadMem(NES* this) {
     prgROM = malloc(this->header.prgrom_size * 0x4000);
     chrROM = malloc(this->header.chrrom_size * 0x2000);
     prgRAM = malloc(this->header.prgram_size * 0x2000);
+    
+    if (prgROM == NULL) {
+        printf("ERROR: prgROM could not be allocated.");
+        exit(EXIT_FAILURE);
+    }
+    if (chrROM == NULL) {
+        printf("ERROR: chrROM could not be allocated.");
+        exit(EXIT_FAILURE);
+    }
+    if (prgRAM == NULL) {
+        printf("ERROR: prgRAM could not be allocated.");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void NESLoadMem2(NES* this) {
@@ -157,8 +157,8 @@ void NESLoadMem2(NES* this) {
 }
 
 void NESLoadRAM(NES* this, uint8_t* bytes) {
-    int16_t rAddr = 0;
-    int16_t fAddr = 0;
+    int rAddr = 0;
+    int fAddr = 0;
     int i;
 
     // if (this->header.has_battery) {
@@ -166,25 +166,18 @@ void NESLoadRAM(NES* this, uint8_t* bytes) {
     // }
 
     if (this->header.has_trainer) {
-        rAddr = 0x7000;
-        for (i = 0; i < 0x200; i++, rAddr++, fAddr++) {
-            this->RAM[rAddr] = bytes[i];
+        for (i = 0x7000; i < 0x7200; i++, fAddr++) {
+            this->SRAM[i + 0x7000] = bytes[fAddr];
         }
     }
 
-    rAddr = 0x8000;
     if (this->header.prgrom_size == 1) {
-        for (i = 0; i < 0x4000; i++, rAddr++, fAddr++) {
-            prgROM[i] = this->RAM[rAddr] = bytes[fAddr];
-        }
-
-        fAddr -= 0x4000;
-        for (i = 0; i < 0x4000; i++, rAddr++, fAddr++) {
-            this->RAM[rAddr] = bytes[fAddr];
+        for (i = 0; i < 0x4000; i++, fAddr++) {
+            prgROM[i] = this->PRGROM[i] = bytes[fAddr];
         }
     } else {
-        for (i = 0; i < 0x8000; i++, rAddr++, fAddr++) {
-            prgROM[i] = this->RAM[rAddr] = bytes[fAddr];
+        for (i = 0; i < 0x8000; i++, fAddr++) {
+            prgROM[i] = this->PRGROM[i] = bytes[fAddr];
         }
         for (; i < this->header.prgrom_size * 0x4000; i++, fAddr++) {
             prgROM[i] = bytes[fAddr];
@@ -194,6 +187,9 @@ void NESLoadRAM(NES* this, uint8_t* bytes) {
     for (i = 0; i < this->header.chrrom_size * 0x2000; i++, fAddr++) {
         chrROM[i] = bytes[fAddr];
     }
+
+    // temporary
+    this->PPU.PPUSTATUS = 0xFF;
 }
 
 void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
@@ -204,7 +200,7 @@ void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
     this->x = 0;
     this->y = 0;
 
-    this->pc = 0xC000;
+    this->pc = 0xFFFC;
     this->sp = 0xFF;
     this->p.flags = 0;
 
@@ -238,9 +234,28 @@ void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
     }
 
     fullFile = malloc((filesize - 0x10) * sizeof(uint8_t));
+    if (fullFile == NULL) {
+        printf("ERROR: file size could not be allocated.");
+        exit(EXIT_FAILURE);
+    }
     fread(fullFile, sizeof(uint8_t), filesize - 0x10, file);
 
     NESLoadRAM(this, fullFile);
 
     // mapper & ppu stuff
+}
+
+uint32_t Cycle(NES* this) {
+    printf("%X ", this->RAM[this->pc]);
+    return opTable[this->RAM[this->pc]](this);
+}
+
+uint32_t CyclePLP(NES* this) {
+    printf("%X ", this->RAM[this->pc]);
+    uint32_t val = opTable[this->RAM[this->pc]](this);
+
+    this->p.intd = special_plp;
+    this->cycleFunc = Cycle;
+
+    return val;
 }
