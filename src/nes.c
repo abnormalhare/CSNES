@@ -109,7 +109,7 @@ void NESLoadMem2(NES* this) {
 
     if (this->header.prg_rom_hi == 0xF) {
         uint32_t mult = (this->header.prgrom_size & 0b00000011);
-        uint32_t expn = (this->header.prgrom_size & 0b11111100);
+        uint32_t expn = (this->header.prgrom_size & 0b11111100) >> 2;
 
         if (expn > 26) {
             printf("ERROR: Could not read '%s', PRG-ROM size too high!");
@@ -124,7 +124,7 @@ void NESLoadMem2(NES* this) {
 
     if (this->header.chr_rom_hi == 0xF) {
         uint32_t mult = (this->header.chrrom_size & 0b00000011);
-        uint32_t expn = (this->header.chrrom_size & 0b11111100);
+        uint32_t expn = (this->header.chrrom_size & 0b11111100) >> 2;
 
         if (expn > 26) {
             printf("ERROR: Could not read '%s', CHR-ROM size too high!");

@@ -29,15 +29,10 @@ uint32_t OP_01(NES* this) {
 
 // SLO (d,x)
 uint32_t OP_03(NES* this) {
-    uint8_t value = index_dx(this, VAL1);
+    uint16_t r1 = index_zx(this, VAL1);
+    uint16_t r2 = index_zx(this, VAL1 + 1);
 
-    this->p.carry = (this->a > 0x7F);
-
-    this->a <<= 1;
-    this->a |= value;
-
-    this->p.zero = (this->a == 0);
-    this->p.neg  = (this->a > 0x7F);
+    OP_SLO(this, &this->RAM[(r1 + r2) * 256]);
 
     this->pc += 2;
     return 8;
@@ -65,14 +60,7 @@ uint32_t OP_06(NES* this) {
 
 // SLO d
 uint32_t OP_07(NES* this) {
-    uint8_t* value = &this->RAM[VAL1];
-
-    this->p.carry = (*value > 0x7F);
-    *value <<= 1;
-    this->a |= *value;
-    this->p.zero = (this->a == 0);
-    this->p.neg  = (this->a > 0x7F);
-
+    OP_SLO(this, &this->RAM[VAL1]);
     this->pc += 2;
     return 5;
 }
@@ -136,6 +124,13 @@ uint32_t OP_0E(NES* this) {
     return 6;
 }
 
+// SLO a
+uint32_t OP_0F(NES* this) {
+    OP_SLO(this, &this->RAM[LE_ADDR]);
+    this->pc += 3;
+    return 6;
+}
+
 // BPL
 uint32_t OP_10(NES* this) {
     if (!this->p.neg) {
@@ -154,6 +149,20 @@ uint32_t OP_11(NES* this) {
     CHECK_PAGE(5);
 }
 
+// SLO (d),y
+uint32_t OP_13(NES* this) {
+    uint16_t r = this->RAM[VAL1] + this->RAM[(VAL1 + 1) % 256] * 256;
+    if ((r % 256) + this->y > 0xFF) {
+        page_crossed = 1;
+    } else {
+        page_crossed = 0;
+    }
+
+    OP_SLO(this, &this->RAM[r + this->y]);
+    this->pc += 2;
+    CHECK_PAGE(7);
+}
+
 // NOP d,x
 uint32_t OP_14(NES* this) {
     this->pc += 2;
@@ -170,6 +179,13 @@ uint32_t OP_15(NES* this) {
 // ASL d,x
 uint32_t OP_16(NES* this) {
     OP_ASL(this, &this->RAM[(uint8_t)(VAL1 + this->x)]);
+    this->pc += 2;
+    return 6;
+}
+
+// SLO d,x
+uint32_t OP_17(NES* this) {
+    OP_SLO(this, &this->RAM[(uint8_t)(VAL1 + this->x)]);
     this->pc += 2;
     return 6;
 }
@@ -194,6 +210,13 @@ uint32_t OP_1A(NES* this) {
     return 2;
 }
 
+// SLO a,y
+uint32_t OP_1B(NES* this) {
+    OP_SLO(this, &this->RAM[LE_ADDR + this->y]);
+    this->pc += 3;
+    CHECK_PAGE(6);
+}
+
 // IGN a,x
 uint32_t OP_1C(NES* this) {
     uint16_t addr = index_ax(this, LE_ADDR);
@@ -215,6 +238,13 @@ uint32_t OP_1E(NES* this) {
     return 7;
 }
 
+// SLO a,x
+uint32_t OP_1F(NES* this) {
+    OP_SLO(this, &this->RAM[LE_ADDR + this->x]);
+    this->pc += 3;
+    CHECK_PAGE(6);
+}
+
 // JSR
 uint32_t OP_20(NES* this) {
     push(this, this->pc);
@@ -229,6 +259,17 @@ uint32_t OP_21(NES* this) {
     OP_AND(this, this->RAM[VAL1]);
     this->pc += 2;
     return 6;
+}
+
+// RLA (d,x)
+uint32_t OP_23(NES* this) {
+    uint16_t r1 = index_zx(this, VAL1);
+    uint16_t r2 = index_zx(this, VAL1 + 1);
+
+    OP_RLA(this, &this->RAM[(r1 + r2) * 256]);
+
+    this->pc += 2;
+    return 8;
 }
 
 // BIT d
@@ -253,6 +294,13 @@ uint32_t OP_25(NES* this) {
 // ROL d
 uint32_t OP_26(NES* this) {
     OP_ROL(this, &this->RAM[VAL1]);
+    this->pc += 2;
+    return 5;
+}
+
+// RLA d
+uint32_t OP_27(NES* this) {
+    OP_RLA(this, &this->RAM[VAL1]);
     this->pc += 2;
     return 5;
 }
@@ -332,6 +380,13 @@ uint32_t OP_2E(NES* this) {
     return 6;
 }
 
+// RLA a
+uint32_t OP_2F(NES* this) {
+    OP_RLA(this, &this->RAM[LE_ADDR]);
+    this->pc += 3;
+    return 6;
+}
+
 // BMI
 uint32_t OP_30(NES* this) {
     if (this->p.neg) {
@@ -351,6 +406,20 @@ uint32_t OP_31(NES* this) {
     CHECK_PAGE(5);
 }
 
+// RLA (d),y
+uint32_t OP_33(NES* this) {
+    uint16_t r = this->RAM[VAL1] + this->RAM[(VAL1 + 1) % 256] * 256;
+    if ((r % 256) + this->y > 0xFF) {
+        page_crossed = 1;
+    } else {
+        page_crossed = 0;
+    }
+
+    OP_RLA(this, &this->RAM[r + this->y]);
+    this->pc += 2;
+    CHECK_PAGE(7);
+}
+
 // NOP d,x
 uint32_t OP_34(NES* this) {
     this->pc += 2;
@@ -367,6 +436,13 @@ uint32_t OP_35(NES* this) {
 // ROL d,x
 uint32_t OP_36(NES* this) {
     OP_ROL(this, &this->RAM[(uint32_t)(VAL1 + this->x)]);
+    this->pc += 2;
+    return 6;
+}
+
+// RLA d,x
+uint32_t OP_37(NES* this) {
+    OP_RLA(this, &this->RAM[(uint8_t)(VAL1 + this->x)]);
     this->pc += 2;
     return 6;
 }
@@ -391,6 +467,13 @@ uint32_t OP_3A(NES* this) {
     return 2;
 }
 
+// RLA a,y
+uint32_t OP_3B(NES* this) {
+    OP_RLA(this, &this->RAM[LE_ADDR + this->y]);
+    this->pc += 3;
+    CHECK_PAGE(6);
+}
+
 // IGN a,x
 uint32_t OP_3C(NES* this) {
     uint16_t addr = index_ax(this, LE_ADDR);
@@ -411,6 +494,13 @@ uint32_t OP_3E(NES* this) {
     OP_ROL(this, &this->RAM[LE_ADDR + this->x]);
     this->pc += 3;
     return 7;
+}
+
+// RLA a,x
+uint32_t OP_3F(NES* this) {
+    OP_RLA(this, &this->RAM[LE_ADDR + this->x]);
+    this->pc += 3;
+    CHECK_PAGE(6);
 }
 
 // RTI
@@ -435,6 +525,17 @@ uint32_t OP_41(NES* this) {
     return 6;
 }
 
+// SRE (d,x)
+uint32_t OP_43(NES* this) {
+    uint16_t r1 = index_zx(this, VAL1);
+    uint16_t r2 = index_zx(this, VAL1 + 1);
+
+    OP_SRE(this, &this->RAM[(r1 + r2) * 256]);
+
+    this->pc += 2;
+    return 8;
+}
+
 // NOP d
 uint32_t OP_44(NES* this) {
     this->pc += 2;
@@ -451,6 +552,13 @@ uint32_t OP_45(NES* this) {
 // LSR d
 uint32_t OP_46(NES* this) {
     OP_LSR(this, &this->RAM[VAL1]);
+    this->pc += 2;
+    return 5;
+}
+
+// SRE d
+uint32_t OP_47(NES* this) {
+    OP_SRE(this, &this->RAM[VAL1]);
     this->pc += 2;
     return 5;
 }
@@ -514,6 +622,13 @@ uint32_t OP_4E(NES* this) {
     return 6;
 }
 
+// SRE a
+uint32_t OP_4F(NES* this) {
+    OP_SRE(this, &this->RAM[LE_ADDR]);
+    this->pc += 3;
+    return 6;
+}
+
 // BVC
 uint32_t OP_50(NES* this) {
     if (!this->p.over) {
@@ -530,6 +645,20 @@ uint32_t OP_51(NES* this) {
     OP_EOR(this, index_dy(this, VAL1));
     this->pc += 2;
     CHECK_PAGE(5);
+}
+
+// SRE (d),y
+uint32_t OP_53(NES* this) {
+    uint16_t r = this->RAM[VAL1] + this->RAM[(VAL1 + 1) % 256] * 256;
+    if ((r % 256) + this->y > 0xFF) {
+        page_crossed = 1;
+    } else {
+        page_crossed = 0;
+    }
+
+    OP_SRE(this, &this->RAM[r + this->y]);
+    this->pc += 2;
+    CHECK_PAGE(7);
 }
 
 // NOP d,x
@@ -552,6 +681,14 @@ uint32_t OP_56(NES* this) {
     return 6;
 }
 
+// SRE d,x
+uint32_t OP_57(NES* this) {
+    OP_SRE(this, &this->RAM[(uint8_t)(VAL1 + this->x)]);
+    this->pc += 2;
+    return 6;
+}
+
+
 // CLI
 uint32_t OP_58(NES* this) {
     this->cycleFunc = CyclePLP;
@@ -572,6 +709,13 @@ uint32_t OP_59(NES* this) {
 uint32_t OP_5A(NES* this) {
     this->pc++;
     return 2;
+}
+
+// SRE a,y
+uint32_t OP_5B(NES* this) {
+    OP_SRE(this, &this->RAM[LE_ADDR + this->y]);
+    this->pc += 3;
+    CHECK_PAGE(6);
 }
 
 // IGN a,x
@@ -596,6 +740,13 @@ uint32_t OP_5E(NES* this) {
     return 7;
 }
 
+// SRE a,x
+uint32_t OP_5F(NES* this) {
+    OP_SRE(this, &this->RAM[LE_ADDR + this->x]);
+    this->pc += 3;
+    CHECK_PAGE(6);
+}
+
 // RTS
 uint32_t OP_60(NES* this) {
     this->pc = (pop(this) << 8) + pop(this);
@@ -608,6 +759,17 @@ uint32_t OP_61(NES* this) {
     OP_ADC(this, index_dx(this, VAL1));
     this->pc += 2;
     return 6;
+}
+
+// RRA (d,x)
+uint32_t OP_63(NES* this) {
+    uint16_t r1 = index_zx(this, VAL1);
+    uint16_t r2 = index_zx(this, VAL1 + 1);
+
+    OP_RRA(this, &this->RAM[(r1 + r2) * 256]);
+
+    this->pc += 2;
+    return 8;
 }
 
 // NOP d
@@ -626,6 +788,13 @@ uint32_t OP_65(NES* this) {
 // ROR d
 uint32_t OP_66(NES* this) {
     OP_ROR(this, &this->RAM[VAL1]);
+    this->pc += 2;
+    return 5;
+}
+
+// RRA d
+uint32_t OP_67(NES* this) {
+    OP_RRA(this, &this->RAM[VAL1]);
     this->pc += 2;
     return 5;
 }
@@ -719,6 +888,27 @@ uint32_t OP_6E(NES* this) {
     return 6;
 }
 
+// RRA a
+uint32_t OP_6F(NES* this) {
+    OP_RRA(this, &this->RAM[LE_ADDR]);
+    this->pc += 3;
+    return 6;
+}
+
+// RRA (d),y
+uint32_t OP_73(NES* this) {
+    uint16_t r = this->RAM[VAL1] + this->RAM[(VAL1 + 1) % 256] * 256;
+    if ((r % 256) + this->y > 0xFF) {
+        page_crossed = 1;
+    } else {
+        page_crossed = 0;
+    }
+
+    OP_RRA(this, &this->RAM[r + this->y]);
+    this->pc += 2;
+    CHECK_PAGE(7);
+}
+
 // NOP d,x
 uint32_t OP_74(NES* this) {
     this->pc += 2;
@@ -735,6 +925,13 @@ uint32_t OP_75(NES* this) {
 // ROR d,x
 uint32_t OP_76(NES* this) {
     OP_ROR(this, &this->RAM[(uint8_t)(VAL1 + this->x)]);
+    this->pc += 2;
+    return 6;
+}
+
+// RRA d,x
+uint32_t OP_77(NES* this) {
+    OP_RRA(this, &this->RAM[(uint8_t)(VAL1 + this->x)]);
     this->pc += 2;
     return 6;
 }
@@ -762,6 +959,13 @@ uint32_t OP_7A(NES* this) {
     return 2;
 }
 
+// RRA a,y
+uint32_t OP_7B(NES* this) {
+    OP_RRA(this, &this->RAM[LE_ADDR + this->y]);
+    this->pc += 3;
+    CHECK_PAGE(6);
+}
+
 // IGN a,x
 uint32_t OP_7C(NES* this) {
     uint16_t addr = index_ax(this, LE_ADDR);
@@ -785,6 +989,13 @@ uint32_t OP_7E(NES* this) {
     return 7;
 }
 
+// RRA a,x
+uint32_t OP_7F(NES* this) {
+    OP_RRA(this, &this->RAM[LE_ADDR + this->x]);
+    this->pc += 3;
+    CHECK_PAGE(6);
+}
+
 // SKB #
 uint32_t OP_80(NES* this) {
     this->pc += 2;
@@ -797,6 +1008,7 @@ uint32_t OP_81(NES* this) {
     uint16_t r2 = index_zx(this, VAL1 + 1);
 
     this->RAM[(r1 + r2) * 256] = this->a;
+
     this->pc += 2;
     return 6;
 }
@@ -805,6 +1017,17 @@ uint32_t OP_81(NES* this) {
 uint32_t OP_82(NES* this) {
     this->pc += 2;
     return 2;
+}
+
+// SAX (d,x)
+uint32_t OP_83(NES* this) {
+    uint16_t r1 = index_zx(this, VAL1);
+    uint16_t r2 = index_zx(this, VAL1 + 1);
+
+    this->RAM[(r1 + r2) * 256] = this->a & this->x;
+    
+    this->pc += 2;
+    return 6;
 }
 
 // STY d
@@ -824,6 +1047,13 @@ uint32_t OP_85(NES* this) {
 // STX d
 uint32_t OP_86(NES* this) {
     this->RAM[VAL1] = this->x;
+    this->pc += 2;
+    return 3;
+}
+
+// SAX d
+uint32_t OP_87(NES* this) {
+    this->RAM[VAL1] = this->a & this->x;
     this->pc += 2;
     return 3;
 }
@@ -853,6 +1083,11 @@ uint32_t OP_8A(NES* this) {
     return 2;
 }
 
+// // XAA #
+// uint32_t OP_8B(NES* this) {
+//     this->a = (this->a | 0xEE)
+// }
+
 // STY a
 uint32_t OP_8C(NES* this) {
     this->RAM[LE_ADDR] = this->y;
@@ -870,6 +1105,13 @@ uint32_t OP_8D(NES* this) {
 // STX a
 uint32_t OP_8E(NES* this) {
     this->RAM[LE_ADDR] = this->x;
+    this->pc += 3;
+    return 4;
+}
+
+// SAX a
+uint32_t OP_8F(NES* this) {
+    this->RAM[LE_ADDR] = this->a & this->x;
     this->pc += 3;
     return 4;
 }
@@ -912,6 +1154,23 @@ uint32_t OP_96(NES* this) {
     this->RAM[(uint8_t)(VAL1 + this->y)] = this->x;
     this->pc += 2;
     return 4;
+}
+
+// SAX d,y
+uint32_t OP_97(NES* this) {
+    this->RAM[(uint8_t)(VAL1 + this->y)] = this->a & this->x;
+    this->pc += 2;
+    return 4;
+}
+
+uint32_t OP_98(NES* this) {
+    this->a = this->y;
+
+    this->p.zero = (this->a == 0);
+    this->p.neg  = (this->a > 0x7F);
+
+    this->pc++;
+    return 2;
 }
 
 // STA a,y
@@ -1174,6 +1433,17 @@ uint32_t OP_C2(NES* this) {
     return 2;
 }
 
+// DCP (d,x)
+uint32_t OP_C3(NES* this) {
+    uint16_t r1 = index_zx(this, VAL1);
+    uint16_t r2 = index_zx(this, VAL1 + 1);
+
+    OP_DCP(this, &this->RAM[(r1 + r2) * 256]);
+
+    this->pc += 2;
+    return 8;
+}
+
 // CPY d
 uint32_t OP_C4(NES* this) {
     OP_CPY(this, this->RAM[VAL1]);
@@ -1191,6 +1461,13 @@ uint32_t OP_C5(NES* this) {
 // DEC d
 uint32_t OP_C6(NES* this) {
     OP_DEC(this, &this->RAM[VAL1]);
+    this->pc += 2;
+    return 5;
+}
+
+// DCP d
+uint32_t OP_C7(NES* this) {
+    OP_DCP(this, &this->RAM[VAL1]);
     this->pc += 2;
     return 5;
 }
@@ -1258,6 +1535,13 @@ uint32_t OP_CE(NES* this) {
     return 6;
 }
 
+// DCP a
+uint32_t OP_CF(NES* this) {
+    OP_DCP(this, &this->RAM[LE_ADDR]);
+    this->pc += 3;
+    return 6;
+}
+
 // BNE
 uint32_t OP_D0(NES* this) {
     if (this->p.zero) {
@@ -1276,6 +1560,20 @@ uint32_t OP_D1(NES* this) {
     CHECK_PAGE(5);
 }
 
+// DCP (d),y
+uint32_t OP_D3(NES* this) {
+    uint16_t r = this->RAM[VAL1] + this->RAM[(VAL1 + 1) % 256] * 256;
+    if ((r % 256) + this->y > 0xFF) {
+        page_crossed = 1;
+    } else {
+        page_crossed = 0;
+    }
+
+    OP_DCP(this, &this->RAM[r + this->y]);
+    this->pc += 2;
+    CHECK_PAGE(7);
+}
+
 // NOP d,x
 uint32_t OP_D4(NES* this) {
     this->pc += 2;
@@ -1292,6 +1590,13 @@ uint32_t OP_D5(NES* this) {
 // DEC d,x
 uint32_t OP_D6(NES* this) {
     OP_DEC(this, &this->RAM[(uint8_t)(this->x + VAL1)]);
+    this->pc += 2;
+    return 6;
+}
+
+// DCP d,x
+uint32_t OP_D7(NES* this) {
+    OP_DCP(this, &this->RAM[(uint8_t)(VAL1 + this->x)]);
     this->pc += 2;
     return 6;
 }
@@ -1316,6 +1621,13 @@ uint32_t OP_DA(NES* this) {
     return 2;
 }
 
+// DCP a,y
+uint32_t OP_DB(NES* this) {
+    OP_DCP(this, &this->RAM[LE_ADDR + this->y]);
+    this->pc += 3;
+    CHECK_PAGE(6);
+}
+
 // IGN a,x
 uint32_t OP_DC(NES* this) {
     uint16_t addr = index_ax(this, LE_ADDR);
@@ -1335,6 +1647,13 @@ uint32_t OP_DE(NES* this) {
     OP_DEC(this, &this->RAM[LE_ADDR + this->x]);
     this->pc += 3;
     return 7;
+}
+
+// DCP a,x
+uint32_t OP_DF(NES* this) {
+    OP_DCP(this, &this->RAM[LE_ADDR + this->x]);
+    this->pc += 3;
+    CHECK_PAGE(6);
 }
 
 // CPX #
@@ -1357,6 +1676,17 @@ uint32_t OP_E2(NES* this) {
     return 2;
 }
 
+// ISC (d,x)
+uint32_t OP_E3(NES* this) {
+    uint16_t r1 = index_zx(this, VAL1);
+    uint16_t r2 = index_zx(this, VAL1 + 1);
+
+    OP_ISC(this, &this->RAM[(r1 + r2) * 256]);
+
+    this->pc += 2;
+    return 8;
+}
+
 // CPX d
 uint32_t OP_E4(NES* this) {
     OP_CPX(this, this->RAM[VAL1]);
@@ -1374,6 +1704,13 @@ uint32_t OP_E5(NES* this) {
 // INC d
 uint32_t OP_E6(NES* this) {
     OP_DEC(this, &this->RAM[VAL1]);
+    this->pc += 2;
+    return 5;
+}
+
+// ISC d
+uint32_t OP_E7(NES* this) {
+    OP_ISC(this, &this->RAM[VAL1]);
     this->pc += 2;
     return 5;
 }
@@ -1423,6 +1760,13 @@ uint32_t OP_EE(NES* this) {
     return 6;
 }
 
+// ISC a
+uint32_t OP_EF(NES* this) {
+    OP_ISC(this, &this->RAM[LE_ADDR]);
+    this->pc += 3;
+    return 6;
+}
+
 // BEQ
 uint32_t OP_F0(NES* this) {
     if (this->p.zero) {
@@ -1441,6 +1785,20 @@ uint32_t OP_F1(NES* this) {
     CHECK_PAGE(5);
 }
 
+// ISC (d),y
+uint32_t OP_F3(NES* this) {
+    uint16_t r = this->RAM[VAL1] + this->RAM[(VAL1 + 1) % 256] * 256;
+    if ((r % 256) + this->y > 0xFF) {
+        page_crossed = 1;
+    } else {
+        page_crossed = 0;
+    }
+
+    OP_ISC(this, &this->RAM[r + this->y]);
+    this->pc += 2;
+    CHECK_PAGE(7);
+}
+
 // NOP d,x
 uint32_t OP_F4(NES* this) {
     this->pc += 2;
@@ -1457,6 +1815,13 @@ uint32_t OP_F5(NES* this) {
 // INC d
 uint32_t OP_F6(NES* this) {
     OP_DEC(this, &this->RAM[(uint8_t)(VAL1 + this->x)]);
+    this->pc += 2;
+    return 6;
+}
+
+// ISC d,x
+uint32_t OP_F7(NES* this) {
+    OP_ISC(this, &this->RAM[(uint8_t)(VAL1 + this->x)]);
     this->pc += 2;
     return 6;
 }
@@ -1480,6 +1845,13 @@ uint32_t OP_FA(NES* this) {
     return 2;
 }
 
+// ISC a,y
+uint32_t OP_FB(NES* this) {
+    OP_ISC(this, &this->RAM[LE_ADDR + this->y]);
+    this->pc += 3;
+    CHECK_PAGE(6);
+}
+
 // IGN a,x
 uint32_t OP_FC(NES* this) {
     uint16_t addr = index_ax(this, LE_ADDR);
@@ -1499,4 +1871,11 @@ uint32_t OP_FE(NES* this) {
     OP_DEC(this, &this->RAM[LE_ADDR + this->x]);
     this->pc += 3;
     return 7;
+}
+
+// ISC a,x
+uint32_t OP_FF(NES* this) {
+    OP_ISC(this, &this->RAM[LE_ADDR + this->x]);
+    this->pc += 3;
+    CHECK_PAGE(6);
 }

@@ -102,15 +102,13 @@ void OP_CPY(NES* this, uint8_t mem) {
     this->p.neg   = (val < 0);
 }
 
-void OP_DEC(NES* this, uint8_t* mem) {
-    *mem--;
-
-    this->p.zero = (*mem == 0);
-    this->p.neg  = (*mem > 0x7F);
+void OP_DCP(NES* this, uint8_t* mem) {
+    OP_DEC(this, mem);
+    OP_CMP(this, *mem);
 }
 
-void OP_INC(NES* this, uint8_t* mem) {
-    *mem++;
+void OP_DEC(NES* this, uint8_t* mem) {
+    *mem--;
 
     this->p.zero = (*mem == 0);
     this->p.neg  = (*mem > 0x7F);
@@ -121,6 +119,18 @@ void OP_EOR(NES* this, uint8_t mem) {
 
     this->p.zero = (this->a == 0);
     this->p.neg  = (this->a > 0x7F);
+}
+
+void OP_INC(NES* this, uint8_t* mem) {
+    *mem++;
+
+    this->p.zero = (*mem == 0);
+    this->p.neg  = (*mem > 0x7F);
+}
+
+void OP_ISC(NES* this, uint8_t* mem) {
+    OP_INC(this, mem);
+    OP_SBC(this, *mem);
 }
 
 void OP_LAX(NES* this, uint8_t mem) {
@@ -186,6 +196,16 @@ void OP_ROR(NES* this, uint8_t* mem) {
     this->p.neg   = (*mem > 0x7F);
 }
 
+void OP_RLA(NES* this, uint8_t* mem) {
+    OP_ROL(this, mem);
+    OP_AND(this, *mem);
+}
+
+void OP_RRA(NES* this, uint8_t* mem) {
+    OP_ROR(this, mem);
+    OP_ADC(this, *mem);
+}
+
 void OP_SBC(NES* this, uint8_t mem) {
     uint8_t val = this->a;
     this->a -= mem + ~this->p.carry;
@@ -194,4 +214,14 @@ void OP_SBC(NES* this, uint8_t mem) {
     this->p.zero  = (this->a == 0);
     this->p.over  = ((this->a ^ val) & (this->a ^ (~mem)) & 0x80) == 0x80;
     this->p.neg   = (this->a > 0x7F);
+}
+
+void OP_SLO(NES* this, uint8_t* mem) {
+    OP_ASL(this, mem);
+    OP_ORA(this, *mem);
+}
+
+void OP_SRE(NES* this, uint8_t* mem) {
+    OP_LSR(this, mem);
+    OP_EOR(this, *mem);
 }
