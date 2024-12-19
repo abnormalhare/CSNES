@@ -7,8 +7,8 @@ int64_t timeInNanoseconds(void) {
     return ((int64_t)tv.tv_sec) * 1E9 + tv.tv_usec;
 }
 
-int64_t timeInCycles(void) {
+double timeInCycles(void) {
     int64_t tv = timeInNanoseconds();
 
-    return tv / 559;
+    return tv / 559.0;
 }

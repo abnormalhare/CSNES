@@ -7,6 +7,8 @@ void OP_STP(NES* this) {
 
 // BRK
 void OP_00(NES* this) {
+    uint8_t v1 = VAL1;
+
     push(this, this->pc);
     push(this, this->pc >> 8);
 
@@ -16,7 +18,7 @@ void OP_00(NES* this) {
     push(this, p.flags);
     this->p.intd = 1;
 
-    this->pc = 0xFFFE;
+    this->pc = *read(this, 0xFFFE) + (*read(this, 0xFFFF) << 8);
 }
 
 // ORA (d,x)
@@ -56,6 +58,7 @@ void OP_07(NES* this) {
 
 // PHP
 void OP_08(NES* this) {
+    VAL1;
     Status p = this->p;
 
     p.brk = 1;
@@ -102,7 +105,13 @@ void OP_0D(NES* this) {
 
 // ASL a
 void OP_0E(NES* this) {
-    OP_ASL(this, read(this, LE_ADDR));
+    uint16_t addr = LE_ADDR;
+    uint8_t* mem = read(this, addr);
+    write(this, addr, *mem);
+
+    OP_ASL(this, mem);
+    write(this, addr, *mem);
+
     this->pc += 3;
 }
 
@@ -160,6 +169,7 @@ void OP_17(NES* this) {
 
 // CLC
 void OP_18(NES* this) {
+    VAL1;
     this->p.carry = 0;
     this->pc++;
 }
@@ -172,6 +182,7 @@ void OP_19(NES* this) {
 
 // NOP
 void OP_1A(NES* this) {
+    VAL1;
     this->pc++;
 }
 
@@ -195,7 +206,13 @@ void OP_1D(NES* this) {
 
 // ASL a,x
 void OP_1E(NES* this) {
-    OP_ASL(this, index_ax(this, LE_ADDR));
+    uint16_t addr = LE_ADDR;
+    uint8_t* mem = index_ax(this, addr);
+    write(this, addr, *mem);
+
+    OP_ASL(this, mem);
+    write(this, addr, *mem);
+
     this->pc += 3;
 }
 
@@ -207,10 +224,11 @@ void OP_1F(NES* this) {
 
 // JSR
 void OP_20(NES* this) {
+    uint8_t addr_lo = VAL1;
+    ntrnlop(this);
     push(this, this->pc + 2);
     push(this, this->pc >> 8);
-
-    this->pc = LE_ADDR;
+    this->pc = addr_lo + (VAL2 << 8);
 }
 
 // AND (d,x)
@@ -236,7 +254,7 @@ void OP_24(NES* this) {
     this->pc += 2;
 }
 
-// AND #
+// AND d
 void OP_25(NES* this) {
     OP_AND(this, *read(this, VAL1));
     this->pc += 2;
@@ -256,6 +274,7 @@ void OP_27(NES* this) {
 
 // PLP
 void OP_28(NES* this) {
+    pop(this);
     Status p;
     p.flags = *pop(this);
 
@@ -271,7 +290,7 @@ void OP_28(NES* this) {
     this->pc++;
 }
 
-// AND d
+// AND #
 void OP_29(NES* this) {
     OP_AND(this, VAL1);
     this->pc += 2;
@@ -318,7 +337,13 @@ void OP_2D(NES* this) {
 
 // ROL a
 void OP_2E(NES* this) {
-    OP_ROL(this, read(this, LE_ADDR));
+    uint16_t addr = LE_ADDR;
+    uint8_t* mem = read(this, addr);
+    write(this, addr, *mem);
+
+    OP_ROL(this, mem);
+    write(this, addr, *mem);
+
     this->pc += 3;
 }
 
@@ -374,20 +399,22 @@ void OP_37(NES* this) {
     this->pc += 2;
 }
 
+// SEC
 void OP_38(NES* this) {
+    VAL1;
     this->p.carry = 1;
     this->pc++;
 }
 
 // AND a,y
 void OP_39(NES* this) {
-    uint16_t addr = *index_ay(this, LE_ADDR);
-    OP_AND(this, addr);
+    OP_AND(this, *index_ay(this, LE_ADDR));
     this->pc += 3;
 }
 
 // NOP
 void OP_3A(NES* this) {
+    VAL1;
     this->pc++;
 }
 
@@ -405,14 +432,19 @@ void OP_3C(NES* this) {
 
 // AND a,x
 void OP_3D(NES* this) {
-    uint16_t addr = *index_ax(this, LE_ADDR);
-    OP_AND(this, addr);
+    OP_AND(this, *index_ax(this, LE_ADDR));
     this->pc += 3;
 }
 
 // ROL a,x
 void OP_3E(NES* this) {
-    OP_ROL(this, index_ax(this, LE_ADDR));
+    uint16_t addr = LE_ADDR;
+    uint8_t* mem = index_ax(this, addr);
+    write(this, addr, *mem);
+
+    OP_ROL(this, mem);
+    write(this, addr, *mem);
+    
     this->pc += 3;
 }
 
@@ -424,6 +456,8 @@ void OP_3F(NES* this) {
 
 // RTI
 void OP_40(NES* this) {
+    VAL1;
+    pop(this);
     Status p;
     p.flags = *pop(this);
     this->p.carry = p.carry;
@@ -473,6 +507,7 @@ void OP_47(NES* this) {
 
 // PHA
 void OP_48(NES* this) {
+    VAL1;
     push(this, this->a);
     this->pc++;
 }
@@ -519,7 +554,13 @@ void OP_4D(NES* this) {
 
 // LSR a
 void OP_4E(NES* this) {
-    OP_LSR(this, read(this, VAL1));
+    uint16_t addr = LE_ADDR;
+    uint8_t* mem = read(this, addr);
+    write(this, addr, *mem);
+
+    OP_LSR(this, mem);
+    write(this, addr, *mem);
+
     this->pc += 3;
 }
 
@@ -578,6 +619,7 @@ void OP_57(NES* this) {
 
 // CLI
 void OP_58(NES* this) {
+    VAL1;
     this->cycleFunc = CyclePLP;
     special_plp = 0;
 
@@ -592,6 +634,7 @@ void OP_59(NES* this) {
 
 // NOP
 void OP_5A(NES* this) {
+    VAL1;
     this->pc++;
 }
 
@@ -616,7 +659,13 @@ void OP_5D(NES* this) {
 
 // LSR a,x
 void OP_5E(NES* this) {
-    OP_LSR(this, index_ax(this, LE_ADDR));
+    uint16_t addr = LE_ADDR;
+    uint8_t* mem = index_ax(this, addr);
+    write(this, addr, *mem);
+
+    OP_LSR(this, mem);
+    write(this, addr, *mem);
+    
     this->pc += 3;
 }
 
@@ -628,6 +677,8 @@ void OP_5F(NES* this) {
 
 // RTS
 void OP_60(NES* this) {
+    VAL1;
+    pop(this);
     this->pc = (*pop(this) << 8) + *pop(this);
     this->pc++;
 }
@@ -669,6 +720,7 @@ void OP_67(NES* this) {
 
 // PLA
 void OP_68(NES* this) {
+    pop(this);
     this->a = *pop(this);
 
     this->p.zero = (this->a == 0);
@@ -738,13 +790,19 @@ void OP_71(NES* this) {
 
 // ADC a
 void OP_6D(NES* this) {
-    OP_ADC(this, *index_dx(this, VAL1));
+    OP_ADC(this, *read(this, LE_ADDR));
     this->pc += 3;
 }
 
 // ROR a
 void OP_6E(NES* this) {
-    OP_ROR(this, read(this, LE_ADDR));
+    uint16_t addr = LE_ADDR;
+    uint8_t* mem = read(this, addr);
+    write(this, addr, *mem);
+
+    OP_ROR(this, mem);
+    write(this, addr, *mem);
+
     this->pc += 3;
 }
 
@@ -785,6 +843,7 @@ void OP_77(NES* this) {
 
 // SEI
 void OP_78(NES* this) {
+    VAL1;
     this->cycleFunc = CyclePLP;
     special_plp = 1;
     this->pc++;
@@ -792,14 +851,13 @@ void OP_78(NES* this) {
 
 // ADC a,y
 void OP_79(NES* this) {
-    uint16_t addr = *index_ay(this, LE_ADDR);
-    OP_ADC(this, addr);
-    
+    OP_ADC(this, *index_ay(this, LE_ADDR));
     this->pc += 3;
 }
 
 // NOP
 void OP_7A(NES* this) {
+    VAL1;
     this->pc++;
 }
 
@@ -817,15 +875,19 @@ void OP_7C(NES* this) {
 
 // ADC a,x
 void OP_7D(NES* this) {
-    uint16_t addr = *index_ax(this, LE_ADDR);
-    OP_ADC(this, addr);
-
+    OP_ADC(this, *index_ax(this, LE_ADDR));
     this->pc += 3;
 }
 
 // ROR a,x
 void OP_7E(NES* this) {
-    OP_ROR(this, index_ax(this, LE_ADDR));
+    uint16_t addr = LE_ADDR;
+    uint8_t* mem = index_ax(this, addr);
+    write(this, addr, *mem);
+
+    OP_ROR(this, mem);
+    write(this, addr, *mem);
+    
     this->pc += 3;
 }
 
@@ -883,6 +945,7 @@ void OP_87(NES* this) {
 
 // DEY
 void OP_88(NES* this) {
+    VAL1;
     this->y--;
 
     this->p.zero = (this->y == 0);
@@ -898,6 +961,7 @@ void OP_89(NES* this) {
 
 // TXA
 void OP_8A(NES* this) {
+    VAL1;
     this->a = this->x;
 
     this->p.zero = (this->a == 0);
@@ -999,7 +1063,9 @@ void OP_97(NES* this) {
     this->pc += 2;
 }
 
+// TYA
 void OP_98(NES* this) {
+    VAL1;
     this->a = this->y;
 
     this->p.zero = (this->a == 0);
@@ -1016,6 +1082,7 @@ void OP_99(NES* this) {
 
 // TXS
 void OP_9A(NES* this) {
+    VAL1;
     this->sp = this->x;
     this->pc++;
 }
@@ -1110,6 +1177,7 @@ void OP_A7(NES* this) {
 
 // TAY
 void OP_A8(NES* this) {
+    VAL1;
     this->y = this->a;
 
     this->p.zero = (this->y == 0);
@@ -1126,6 +1194,7 @@ void OP_A9(NES* this) {
 
 // TAX
 void OP_AA(NES* this) {
+    VAL1;
     this->x = this->a;
 
     this->p.zero = (this->x == 0);
@@ -1215,6 +1284,7 @@ void OP_B7(NES* this) {
 
 // CLV
 void OP_B8(NES* this) {
+    VAL1;
     this->p.over = 0;
     this->pc++;
 }
@@ -1227,6 +1297,7 @@ void OP_B9(NES* this) {
 
 // TSX
 void OP_BA(NES* this) {
+    VAL1;
     this->x = this->sp;
 
     this->p.zero = (this->x == 0);
@@ -1304,7 +1375,13 @@ void OP_C5(NES* this) {
 
 // DEC d
 void OP_C6(NES* this) {
-    OP_DEC(this, read(this, VAL1));
+    uint16_t addr = LE_ADDR;
+    uint8_t mem = read(this, addr);
+    write(this, addr, mem);
+
+    OP_DEC(this, mem);
+    write(this, addr, mem);
+
     this->pc += 2;
 }
 
@@ -1316,6 +1393,7 @@ void OP_C7(NES* this) {
 
 // INY
 void OP_C8(NES* this) {
+    VAL1;
     this->y--;
 
     this->p.zero = (this->y == 0);
@@ -1332,6 +1410,7 @@ void OP_C9(NES* this) {
 
 // DEX
 void OP_CA(NES* this) {
+    VAL1;
     this->x--;
     this->p.zero = (this->x == 0);
     this->p.neg  = (this->x > 0x7F);
@@ -1369,7 +1448,13 @@ void OP_CD(NES* this) {
 
 // DEC a
 void OP_CE(NES* this) {
-    OP_DEC(this, read(this, LE_ADDR));
+    uint16_t addr = LE_ADDR;
+    uint8_t* mem = read(this, addr);
+    write(this, addr, *mem);
+
+    OP_DEC(this, mem);
+    write(this, addr, *mem);
+
     this->pc += 3;
 }
 
@@ -1427,6 +1512,7 @@ void OP_D7(NES* this) {
 
 // CLD
 void OP_D8(NES* this) {
+    VAL1;
     this->p.dec = 0;
     this->pc++;
 }
@@ -1439,6 +1525,7 @@ void OP_D9(NES* this) {
 
 // NOP
 void OP_DA(NES* this) {
+    VAL1;
     this->pc++;
 }
 
@@ -1462,7 +1549,13 @@ void OP_DD(NES* this) {
 
 // DEC a,x
 void OP_DE(NES* this) {
-    OP_DEC(this, index_ax(this, LE_ADDR));
+    uint16_t addr = LE_ADDR;
+    uint8_t* mem = index_ax(this, addr);
+    write(this, addr, *mem);
+
+    OP_DEC(this, mem);
+    write(this, addr, *mem);
+
     this->pc += 3;
 }
 
@@ -1521,6 +1614,7 @@ void OP_E7(NES* this) {
 
 // INX
 void OP_E8(NES* this) {
+    VAL1;
     this->x--;
 
     this->p.zero = (this->x == 0);
@@ -1537,6 +1631,7 @@ void OP_E9(NES* this) {
 
 // NOP
 void OP_EA(NES* this) {
+    VAL1;
     this->pc++;
 }
 
@@ -1560,7 +1655,13 @@ void OP_ED(NES* this) {
 
 // INC a
 void OP_EE(NES* this) {
-    OP_INC(this, read(this, LE_ADDR));
+    uint16_t addr = LE_ADDR;
+    uint8_t* mem = read(this, addr);
+    write(this, addr, *mem);
+
+    OP_INC(this, mem);
+    write(this, addr, *mem);
+    
     this->pc += 3;
 }
 
@@ -1616,7 +1717,9 @@ void OP_F7(NES* this) {
     this->pc += 2;
 }
 
+// SED
 void OP_F8(NES* this) {
+    VAL1;
     this->p.dec = 1;
     this->pc++;
 }
@@ -1629,6 +1732,7 @@ void OP_F9(NES* this) {
 
 // NOP
 void OP_FA(NES* this) {
+    VAL1;
     this->pc++;
 }
 
@@ -1652,7 +1756,13 @@ void OP_FD(NES* this) {
 
 // INC a,x
 void OP_FE(NES* this) {
-    OP_INC(this, index_ax(this, LE_ADDR));
+    uint16_t addr = LE_ADDR;
+    uint8_t* mem = index_ax(this, addr);
+    write(this, addr, *mem);
+
+    OP_INC(this, mem);
+    write(this, addr, *mem);
+
     this->pc += 3;
 }
 

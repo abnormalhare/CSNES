@@ -243,7 +243,6 @@ void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
     // mapper & ppu stuff
 
     this->cycleFunc = Cycle;
-    this->cycTime = timeInCycles();
 }
 
 uint16_t lastPC;

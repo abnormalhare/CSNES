@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <time.h>
 
-int64_t timeInCycles(void);
+int64_t timeInNanoseconds(void);
+double timeInCycles(void);
 
 #endif

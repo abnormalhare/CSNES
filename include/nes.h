@@ -125,7 +125,7 @@ typedef struct _NES {
 
     Header header;
 
-    uint64_t cycTime;
+    uint32_t cycleCount;
     void (*cycleFunc)(struct _NES*);
     uint8_t jam;
 } NES;
@@ -146,7 +146,7 @@ NES* newNES(void);
 void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize);
 
 extern int8_t special_plp;
-uint32_t Cycle(NES* this);
-uint32_t CyclePLP(NES* this);
+void Cycle(NES* this);
+void CyclePLP(NES* this);
 
 #endif

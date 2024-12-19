@@ -2,11 +2,6 @@
 
 uint32_t page_crossed = 0;
 
-void wait(NES* this) {
-    while (timeInCycles() - this->cycTime < 1);
-    this->cycTime = timeInCycles();
-}
-
 void write(NES* this, uint16_t addr, uint8_t byte) {
     uint16_t pos;
     if (addr < 0x2000) {
@@ -34,7 +29,7 @@ void write(NES* this, uint16_t addr, uint8_t byte) {
         this->PRGROM[pos] = byte;
     }
 
-    wait(this);
+    this->cycleCount++;
 }
 
 uint8_t* read(NES* this, uint16_t addr) {
@@ -65,8 +60,12 @@ uint8_t* read(NES* this, uint16_t addr) {
         byte = &this->PRGROM[pos];
     }
 
-    wait(this);
+    this->cycleCount++;
     return byte;
+}
+
+void ntrnlop(NES* this) {
+    this->cycleCount++;
 }
 
 void setupPC(NES* this) {
@@ -78,7 +77,7 @@ void push(NES* this, uint8_t byte) {
 }
 
 uint8_t* pop(NES* this) {
-    return read(this, ++this->sp);
+    return read(this, this->sp++);
 }
 
 uint8_t* index_zx(NES* this, uint8_t byte) {
@@ -90,20 +89,36 @@ uint8_t* index_zy(NES* this, uint8_t byte) {
 }
 
 uint8_t* index_ax(NES* this, uint16_t addr) {
-    page_crossed = (addr % 256) + this->x > 0xFF;
-    return read(this, this->x + addr);
+    uint8_t val;
+    uint16_t badAddr = (uint8_t)(addr + this->x) + (addr & 0xF0);
+
+    val = read(this, badAddr);
+    if (badAddr != addr + this->x) {
+        val = read(this, addr + this->x);
+    }
+
+    return val;
 }
 
 uint8_t* index_ay(NES* this, uint16_t addr) {
-    page_crossed = (addr % 256) + this->y > 0xFF;
-    return read(this, this->y + addr);
+    uint8_t val;
+    uint16_t badAddr = (uint8_t)(addr + this->y) + (addr & 0xF0);
+
+    val = read(this, badAddr);
+    if (badAddr != addr + this->y) {
+        val = read(this, addr + this->y);
+    }
+
+    return val;
 }
 
 uint8_t* index_dx(NES* this, uint8_t ind) {
-    uint16_t r1 = *index_zx(this, ind);
-    uint16_t r2 = *index_zx(this, ind + 1);
+    read(this, ind);
+    uint8_t val = ind + this->x;
+    uint16_t al = *read(this, val);
+    uint16_t ah = *read(this, (uint8_t)(val + 1));
 
-    return read(this, (r1 + r2) * 256);
+    return read(this, al + (ah << 8));
 }
 
 uint8_t* index_dy(NES* this, uint8_t ind) {

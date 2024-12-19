@@ -7,8 +7,10 @@
 
 extern uint32_t page_crossed;
 
+void wait(NES* this, int64_t count);
 void write(NES* this, uint16_t addr, uint8_t byte);
 uint8_t* read(NES* this, uint16_t addr);
+void ntrnlop(NES* this);
 
 void setupPC(NES* this);
 
@@ -23,7 +25,7 @@ uint8_t* index_dy(NES* this, uint8_t ind);
 
 void OP_ADC(NES* this, uint16_t mem);
 void OP_AND(NES* this, uint8_t mem);
-void OP_ASL(NES* this, uint8_t* mem);
+void OP_ASL(NES* this, uint16_t mem);
 void OP_CMP(NES* this, uint8_t mem);
 void OP_CPX(NES* this, uint8_t mem);
 void OP_CPY(NES* this, uint8_t mem);

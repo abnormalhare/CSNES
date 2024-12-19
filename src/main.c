@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include "nes.h"
+#include "opfuncs.h"
 
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
@@ -79,8 +80,13 @@ int main(int argc, char* argv[]) {
 
     setupPC(nes);
 
+    lastTime = timeInNanoseconds();
     while (!nes->jam) {
         nes->cycleFunc(nes);
+        if (nes->cycleCount >= 29781) {
+            while (timeInNanoseconds() - lastTime < 1E9);
+            lastTime = timeInNanoseconds();
+        }
     }
 
     return 0;
