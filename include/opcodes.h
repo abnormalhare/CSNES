@@ -3,6 +3,7 @@
 
 #include "nes.h"
 #include "opfuncs.h"
+#include "rw.h"
 
 #define CHECK_PAGE(f)     \
     if (page_crossed) {   \
