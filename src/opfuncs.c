@@ -118,7 +118,7 @@ uint8_t index_a(NES* this, uint16_t byte, uint16_t* addr) {
 uint8_t index_ax(NES* this, uint16_t byte, uint16_t* addr) {
     uint8_t val;
 
-    if (addr == NULL) {
+    if (addr != NULL) {
         read(this, (uint8_t)(byte + this->x) + (byte & 0xF0));
         val = read(this, byte + this->x);
     } else {
@@ -137,7 +137,7 @@ uint8_t index_ax(NES* this, uint16_t byte, uint16_t* addr) {
 uint8_t index_ay(NES* this, uint16_t byte, uint16_t* addr) {
     uint8_t val;
 
-    if (addr == NULL) {
+    if (addr != NULL) {
         read(this, (uint8_t)(byte + this->y) + (byte & 0xF0));
         val = read(this, byte + this->y);
     } else {
@@ -169,7 +169,7 @@ uint8_t index_dy(NES* this, uint8_t byte, uint16_t* addr) {
     uint8_t ah = read(this, (uint8_t)(byte + 1));
     uint8_t val;
 
-    if (addr == NULL) {
+    if (addr != NULL) {
         read(this, (uint8_t)(al + this->y) + (ah << 8));
         val = read(this, al + (ah << 8));
     } else {
