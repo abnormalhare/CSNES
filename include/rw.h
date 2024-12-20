@@ -21,7 +21,10 @@ uint8_t index_zy(NES* this, uint8_t byte, uint16_t* addr);
 uint8_t index_ax(NES* this, uint16_t byte, uint16_t* addr);
 uint8_t index_ay(NES* this, uint16_t byte, uint16_t* addr);
 uint8_t index_dx(NES* this, uint8_t byte, uint16_t* addr);
+uint8_t index_dy(NES* this, uint8_t byte, uint16_t* addr);
 
+uint16_t index_axw(NES* this, uint16_t byte);
+uint16_t index_ayw(NES* this, uint16_t byte);
 uint16_t index_dxw(NES* this, uint8_t byte);
 uint16_t index_dyw(NES* this, uint8_t byte);
 uint8_t index_zxw(NES* this, uint8_t byte);

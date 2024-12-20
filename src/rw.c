@@ -117,10 +117,10 @@ uint8_t index_ax(NES* this, uint16_t byte, uint16_t* addr) {
     uint8_t val;
 
     if (addr != NULL) {
-        read(this, (uint8_t)(byte + this->x) + (byte & 0xF0));
+        read(this, (uint8_t)(byte + this->x) + (byte & 0xFF00));
         val = read(this, byte + this->x);
     } else {
-        *addr = (uint8_t)(byte + this->x) + (byte & 0xF0);
+        *addr = (uint8_t)(byte + this->x) + (byte & 0xFF00);
         val = read(this, *addr);
         if (*addr != byte + this->x) {
             *addr = byte + this->x;
@@ -136,10 +136,10 @@ uint8_t index_ay(NES* this, uint16_t byte, uint16_t* addr) {
     uint8_t val;
 
     if (addr != NULL) {
-        read(this, (uint8_t)(byte + this->y) + (byte & 0xF0));
+        read(this, (uint8_t)(byte + this->y) + (byte & 0xFF00));
         val = read(this, byte + this->y);
     } else {
-        *addr = (uint8_t)(byte + this->y) + (byte & 0xF0);
+        *addr = (uint8_t)(byte + this->y) + (byte & 0xFF00);
         val = read(this, *addr);
         if (*addr != byte + this->y) {
             *addr = byte + this->y;
@@ -182,6 +182,18 @@ uint8_t index_dy(NES* this, uint8_t byte, uint16_t* addr) {
     }
 
     return val;
+}
+
+// 1 cycle
+uint16_t index_axw(NES* this, uint16_t byte) {
+    read(this, (uint8_t)(byte + this->x) + (byte & 0xFF00));
+    return byte + this->x;
+}
+
+// 1 cycle
+uint16_t index_ayw(NES* this, uint16_t byte) {
+    read(this, (uint8_t)(byte + this->y) + (byte & 0xFF00));
+    return byte + this->y;
 }
 
 // 3 cycles

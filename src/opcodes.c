@@ -2,7 +2,7 @@
 
 // opcodes x2 aside from 0x82, 0xA2, 0xC2, and 0xE2
 void OP_STP(NES* this) {
-    return -1;
+    this->jam = 1;
 }
 
 // BRK
@@ -634,8 +634,6 @@ void OP_4B(NES* this) {
 
     this->p.zero  = (this->a == 0);
     this->p.neg   = (this->a > 0x7F);
-
-    this->pc += 2;
 }
 
 // JMP a
@@ -831,7 +829,6 @@ void OP_64(NES* this) {
 // ADC d
 void OP_65(NES* this) {
     OP_ADC(this, read(this, getVal(this)));
-    this->pc += 2;
 }
 
 // ROR d
@@ -1006,7 +1003,6 @@ void OP_78(NES* this) {
     readVal(this);
     this->cycleFunc = CyclePLP;
     special_plp = 1;
-    this->pc++;
 }
 
 // ADC a,y
@@ -1184,8 +1180,8 @@ void OP_91(NES* this) {
 
 // AHX (d),y UNSTABLE
 void OP_93(NES* this) {
-    uint8_t mem = index_dyw(this, getVal(this));
-    write(this, mem, this->a & this->x & ((mem >> 4) + 1));
+    uint16_t mem = index_dyw(this, getVal(this));
+    write(this, mem, this->a & this->x & ((mem >> 8) + 1));
 }
 
 // STY d,x
@@ -1219,284 +1215,264 @@ void OP_98(NES* this) {
 
     this->p.zero = (this->a == 0);
     this->p.neg  = (this->a > 0x7F);
-
-    this->pc++;
 }
 
 // STA a,y
 void OP_99(NES* this) {
-    write(this, LE_ADDR + this->y, this->a);
-    this->pc += 3;
+    int16_t addr = getVal(this) + (getVal(this) << 8);
+    write(this, index_ayw(this, addr), this->a);
 }
 
 // TXS
 void OP_9A(NES* this) {
-    VAL1;
+    readVal(this);
     this->sp = this->x;
-    this->pc++;
 }
 
 // TAS a,y UNSTABLE
 void OP_9B(NES* this) {
-    uint16_t addr = LE_ADDR + this->y;
-
+    int16_t addr = getVal(this) + (getVal(this) << 8);
+    addr = index_ayw(this, addr);
     this->sp = this->a & this->x;
-    write(this, addr, this->a & this->x & ((addr >> 4) + 1));
-
-    this->pc += 3;
+    write(this, addr, this->a & this->x & ((addr >> 8) + 1));
 }
 
 // SHY a,x UNSTABLE
 void OP_9C(NES* this) {
-    uint16_t addr = LE_ADDR + this->x;
+    int16_t addr = getVal(this) + (getVal(this) << 8);
+    addr = index_axw(this, addr);
     write(this, addr, this->y & ((addr >> 4) + 1));
-
-    this->pc += 3;
 }
 
 // STA a,x
 void OP_9D(NES* this) {
-    write(this, LE_ADDR + this->x, this->a);
-    this->pc += 3;
+    int16_t addr = getVal(this) + (getVal(this) << 8);
+    addr = index_axw(this, addr);
+    write(this, addr, this->a);
 }
 
 // SHX a,y UNSTABLE
 void OP_9E(NES* this) {
-    uint16_t addr = LE_ADDR + this->y;
+    int16_t addr = getVal(this) + (getVal(this) << 8);
+    addr = index_ayw(this, addr);
     write(this, addr, this->x & ((addr >> 4) + 1));
-
-    this->pc += 3;
 }
 
-// AHX a,y UNSTABLE, GUESS
+// AHX a,y UNSTABLE
 void OP_9F(NES* this) {
-    uint16_t addr = LE_ADDR + this->y;
+    int16_t addr = getVal(this) + (getVal(this) << 8);
+    addr = index_ayw(this, addr);
     write(this, addr, this->a & this->x & ((addr >> 4) + 1));
-
-    this->pc += 3;
 }
 
 // LDY #
 void OP_A0(NES* this) {
-    OP_LDY(this, VAL1);
-    this->pc += 2;
+    OP_LDY(this, getVal(this));
 }
 
 // LDA (d,x)
 void OP_A1(NES* this) {
-    OP_LDA(this, *index_dx(this, VAL1));
-    this->pc += 2;
+    uint8_t mem = index_dx(this, getVal(this), NULL);
+    OP_LDA(this, mem);
 }
 
 // LDX #
 void OP_A2(NES* this) {
-    OP_LDX(this, VAL1);
-    this->pc += 2;
+    OP_LDX(this, getVal(this));
 }
 
 // LAX (d,x)
 void OP_A3(NES* this) {
-    OP_LAX(this, *index_dx(this, VAL1));
-    this->pc += 2;
+    uint8_t mem = index_dx(this, getVal(this), NULL);
+    OP_LAX(this, mem);
 }
 
 // LDY d
 void OP_A4(NES* this) {
-    OP_LDY(this, *read(this, VAL1));
-    this->pc += 2;
+    OP_LDY(this, read(this, getVal(this)));
 }
 
 // LDA d
 void OP_A5(NES* this) {
-    OP_LDA(this, *read(this, VAL1));
-    this->pc += 2;
+    OP_LDA(this, read(this, getVal(this)));
 }
 
 // LDX d
 void OP_A6(NES* this) {
-    OP_LDX(this, *read(this, VAL1));
-    this->pc += 2;
+    OP_LDX(this, read(this, getVal(this)));
 }
 
 // LAX d
 void OP_A7(NES* this) {
-    OP_LAX(this, *read(this, VAL1));
-    this->pc += 2;
+    OP_LAX(this, read(this, getVal(this)));
 }
 
 // TAY
 void OP_A8(NES* this) {
-    VAL1;
+    readVal(this);
     this->y = this->a;
 
     this->p.zero = (this->y == 0);
     this->p.neg  = (this->y > 0x7F);
-
-    this->pc++;
 }
 
 // LDA #
 void OP_A9(NES* this) {
-    OP_LDA(this, VAL1);
-    this->pc += 2;
+    OP_LDA(this, getVal(this));
 }
 
 // TAX
 void OP_AA(NES* this) {
-    VAL1;
+    readVal(this);
     this->x = this->a;
 
     this->p.zero = (this->x == 0);
     this->p.neg  = (this->x > 0x7F);
-    
-    this->pc++;
 }
 
 // LXA # UNSTABLE
 void OP_AB(NES* this) {
-    this->a = (this->a | 0xEE) & VAL1;
+    this->a = (this->a | 0xEE) & getVal(this);
     this->x = this->a;
-
-    this->pc += 2;
 }
 
 // LDY a
 void OP_AC(NES* this) {
-    OP_LDY(this, *read(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    OP_LDY(this, read(this, addr));
 }
 
 // LDA a
 void OP_AD(NES* this) {
-    OP_LDA(this, *read(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    OP_LDA(this, read(this, addr));
 }
 
 // LDX a
 void OP_AE(NES* this) {
-    OP_LDX(this, *read(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    OP_LDX(this, read(this, addr));
 }
 
 // LAX a
 void OP_AF(NES* this) {
-    OP_LAX(this, *read(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    OP_LAX(this, read(this, addr));
 }
 
 // BCS
 void OP_B0(NES* this) {
-    if (this->p.carry) {
-        this->pc += (int8_t)(VAL1) + 2;
-        CHECK_PAGE(3);
-    } else {
-        this->pc += 2;
-        
+    int8_t val = getVal(this);
+    uint8_t lo;
+    int16_t addrAdd;
+    uint16_t branch;
+
+    if (!this->p.carry) return;
+    lo = (int8_t)(this->pc) + val;
+    branch = lo + this->pc & 0xFF00;
+    getVal(this);
+    if (branch == this->pc + val) {
+        this->pc = branch;
+        return;
     }
+    getVal(this);
+    int16_t addrAddr = (int16_t)(this->pc) + val;
+    this->pc = addrAdd;
 }
 
 // LDA (d),y
 void OP_B1(NES* this) {
-    OP_LDA(this, *index_dy(this, VAL1));
-    this->pc += 2;
+    uint8_t val = getVal(this);
+    uint8_t mem = index_dy(this, val, NULL);
+    OP_LDA(this, mem);
 }
 
 // LAX (d),y
 void OP_B3(NES* this) {
-    OP_LAX(this, *index_dy(this, VAL1));
-    this->pc += 2;
+    uint8_t val = getVal(this);
+    uint8_t mem = index_dy(this, val, NULL);
+    OP_LAX(this, mem);
 }
 
-// LDY d
+// LDY d,x
 void OP_B4(NES* this) {
-    OP_LDY(this, *index_zx(this, VAL1));
-    this->pc += 2;
+    OP_LDY(this, index_zx(this, getVal(this), NULL));
 }
 
 // LDA d,x
 void OP_B5(NES* this) {
-    OP_LDA(this, *index_zx(this, VAL1));
-    this->pc += 2;
+    OP_LDA(this, index_zx(this, getVal(this), NULL));
 }
 
 // LDX d,y
 void OP_B6(NES* this) {
-    OP_LDX(this, *index_zy(this, VAL1));
-    this->pc += 2;
+    OP_LDX(this, index_zx(this, getVal(this), NULL));
 }
 
 // LAX d,y
 void OP_B7(NES* this) {
-    OP_LAX(this, *index_zy(this, VAL1));
-    this->pc += 2;
+    OP_LAX(this, index_zx(this, getVal(this), NULL));
 }
 
 // CLV
 void OP_B8(NES* this) {
-    VAL1;
+    readVal(this);
     this->p.over = 0;
-    this->pc++;
 }
 
 // LDA a,y
 void OP_B9(NES* this) {
-    OP_LDA(this, *index_ay(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    OP_LDA(this, index_ay(this, addr, NULL));
 }
 
 // TSX
 void OP_BA(NES* this) {
-    VAL1;
+    readVal(this);
     this->x = this->sp;
 
     this->p.zero = (this->x == 0);
     this->p.neg  = (this->x > 0x7F);
-    
-    this->pc++;
 }
 
 // LAS a,y UNSTABLE
 void OP_BB(NES* this) {
-    this->sp = this->x = this->a = *read(this, LE_ADDR + this->y) & this->sp;
-    page_crossed = ((uint8_t)(LE_ADDR) + this->y > 0xFF);
-
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    uint8_t mem = index_ay(this, addr, &addr);
+    this->sp = this->x = this->a = mem & this->sp;
 }
 
 // LDY a
 void OP_BC(NES* this) {
-    OP_LDY(this, *index_ax(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    OP_LDY(this, read(this, addr));
 }
 
 // LDA a,x
 void OP_BD(NES* this) {
-    OP_LDA(this, *index_ax(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    OP_LDA(this, index_ax(this, addr, NULL));
 }
 
 // LDX a,y
 void OP_BE(NES* this) {
-    OP_LDX(this, *index_ay(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    OP_LDX(this, index_ay(this, addr, NULL));
 }
 
 // LAX d,y
 void OP_BF(NES* this) {
-    OP_LAX(this, *index_ay(this, VAL1));
-    this->pc += 3;
+    OP_LAX(this, index_zy(this, getVal(this), NULL));
 }
 
 // CPY #
 void OP_C0(NES* this) {
-    OP_CPY(this, VAL1);
-    this->pc += 2;
+    OP_CPY(this, getVal(this));
 }
 
 // CMP (d,x)
 void OP_C1(NES* this) {
-    OP_CMP(this, *index_dx(this, VAL1));
-    this->pc += 2;
+    OP_CMP(this, index_dx(this, getVal(this), NULL));
 }
 
 // NOP #
@@ -1506,8 +1482,11 @@ void OP_C2(NES* this) {
 
 // DCP (d,x)
 void OP_C3(NES* this) {
-    OP_DCP(this, index_dx(this, VAL1));
-    this->pc += 2;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    uint8_t mem = index_dx(this, addr, &addr);
+    write(this, addr, mem);
+    OP_DCP(this, &mem);
+    write(this, addr, mem);
 }
 
 // CPY d
