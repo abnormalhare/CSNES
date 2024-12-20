@@ -69,8 +69,8 @@ uint8_t getVal(NES* this) {
     return read(this, this->pc++);
 }
 
-uint8_t readVal(NES* this) {
-    return read(this, this->pc);
+void readVal(NES* this) {
+    read(this, this->pc);
 }
 
 void ntrnlop(NES* this) {

@@ -144,7 +144,7 @@ void OP_0F(NES* this) {
 void OP_10(NES* this) {
     int8_t val = getVal(this);
     if (this->p.neg) return;
-    uint16_t branch = (uint8_t)(this->pc + val) + this->pc & 0xF0;
+    uint16_t branch = (uint8_t)(this->pc + val) + this->pc & 0xFF00;
     getVal(this);
     if (branch == this->pc + val) {
         this->pc = branch;
@@ -260,9 +260,8 @@ void OP_1E(NES* this) {
 
 // SLO a,x
 void OP_1F(NES* this) {
-    uint16_t val = getVal(this) + (getVal(this) << 8) + this->y;
-    uint16_t addr;
-    uint8_t mem = index_ax(this, val, &addr);
+    uint16_t addr = getVal(this) + (getVal(this) << 8) + this->y;
+    uint8_t mem = index_ax(this, addr, &addr);
     write(this, addr, mem);
     OP_SLO(this, &mem);
     write(this, addr, mem);
@@ -272,8 +271,8 @@ void OP_1F(NES* this) {
 void OP_20(NES* this) {
     uint8_t addr_lo = getVal(this);
     ntrnlop(this);
-    push(this, this->pc + 2);
     push(this, this->pc >> 8);
+    push(this, this->pc);
     this->pc = addr_lo + (getVal(this) << 8);
 }
 
@@ -408,7 +407,7 @@ void OP_2F(NES* this) {
 void OP_30(NES* this) {
     int8_t val = getVal(this);
     if (!this->p.neg) return;
-    uint16_t branch = (uint8_t)(this->pc + val) + this->pc & 0xF0;
+    uint16_t branch = (uint8_t)(this->pc + val) + this->pc & 0xFF00;
     getVal(this);
     if (branch == this->pc + val) {
         this->pc = branch;
@@ -518,10 +517,8 @@ void OP_3D(NES* this) {
 
 // ROL a,x
 void OP_3E(NES* this) {
-    uint8_t val1 = getVal(this);
-    uint8_t val2 = getVal(this);
-    uint16_t addr;
-    uint8_t mem = index_ax(this, val1 + (val2 << 8), &addr);
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    uint8_t mem = index_ax(this, addr, &addr);
     write(this, addr, mem);
     OP_ROL(this, &mem);
     write(this, addr, mem);
@@ -529,10 +526,8 @@ void OP_3E(NES* this) {
 
 // RLA a,x
 void OP_3F(NES* this) {
-    uint8_t val1 = getVal(this);
-    uint8_t val2 = getVal(this);
-    uint16_t addr;
-    uint8_t mem = index_ax(this, val1 + (val2 << 8), &addr);
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    uint8_t mem = index_ax(this, addr, &addr);
     write(this, addr, mem);
     OP_RLA(this, &mem);
     write(this, addr, mem);
@@ -664,7 +659,7 @@ void OP_4F(NES* this) {
 void OP_50(NES* this) {
     int8_t val = getVal(this);
     if (this->p.over) return;
-    uint16_t branch = (uint8_t)(this->pc + val) + this->pc & 0xF0;
+    uint16_t branch = (uint8_t)(this->pc + val) + this->pc & 0xFF00;
     getVal(this);
     if (branch == this->pc + val) {
         this->pc = branch;
@@ -755,7 +750,7 @@ void OP_5B(NES* this) {
     write(this, addr, mem);
 }
 
-// IGN a,x
+// NOP a,x
 void OP_5C(NES* this) {
     uint16_t addr = getVal(this) + (getVal(this) << 8);
     index_ax(this, addr, NULL);
@@ -787,22 +782,27 @@ void OP_5F(NES* this) {
 
 // RTS
 void OP_60(NES* this) {
-    VAL1;
-    pop(this);
-    this->pc = (*pop(this) << 8) + *pop(this);
-    this->pc++;
+    readVal(this);
+    pop(this, NULL);
+    this->pc = pop(this, NULL) + (pop(this, NULL) << 8);
+    getVal(this);
 }
 
 // ADC (d,x)
 void OP_61(NES* this) {
-    OP_ADC(this, *index_dx(this, VAL1));
-    this->pc += 2;
+    uint8_t val = getVal(this);
+    uint8_t mem = index_dx(this, val, NULL);
+    OP_ADC(this, mem);
 }
 
 // RRA (d,x)
 void OP_63(NES* this) {
-    OP_RRA(this, index_dx(this, VAL1));
-    this->pc += 2;
+    uint8_t val = getVal(this);
+    uint16_t addr;
+    uint8_t mem = index_dx(this, val, &addr);
+    write(this, addr, mem);
+    OP_RRA(this, &mem);
+    write(this, addr, mem);
 }
 
 // NOP d
@@ -812,41 +812,48 @@ void OP_64(NES* this) {
 
 // ADC d
 void OP_65(NES* this) {
-    OP_ADC(this, *read(this, VAL1));
+    OP_ADC(this, read(this, getVal(this)));
     this->pc += 2;
 }
 
 // ROR d
 void OP_66(NES* this) {
-    OP_ROR(this, read(this, VAL1));
-    this->pc += 2;
+    uint8_t val = getVal(this);
+    uint8_t mem = read(this, val);
+    uint16_t addr;
+    write(this, val, mem);
+    OP_ROR(this, &mem);
+    write(this, val, mem);
 }
 
 // RRA d
 void OP_67(NES* this) {
-    OP_RRA(this, read(this, VAL1));
-    this->pc += 2;
+    uint8_t val = getVal(this);
+    uint8_t mem = read(this, val);
+    uint16_t addr;
+    write(this, val, mem);
+    OP_RRA(this, &mem);
+    write(this, val, mem);
 }
 
 // PLA
 void OP_68(NES* this) {
-    pop(this);
-    this->a = *pop(this);
+    readVal(this);
+    pop(this, NULL);
+    this->a = pop(this, NULL);
 
     this->p.zero = (this->a == 0);
     this->p.neg  = (this->a > 0x7F);
-
-    this->pc++;
 }
 
 // ADC #
 void OP_69(NES* this) {
-    OP_ADC(this, VAL1);
-    this->pc += 2;
+    OP_ADC(this, getVal(this));
 }
 
 // ROR
 void OP_6A(NES* this) {
+    readVal(this);
     uint8_t carry = (this->a & 1);
     this->p.carry = carry;
 
@@ -855,13 +862,11 @@ void OP_6A(NES* this) {
 
     this->p.zero  = (this->a == 0);
     this->p.neg   = (this->a > 0x7F);
-
-    this->pc++;
 }
 
 // ARR #
 void OP_6B(NES* this) {
-    this->a &= VAL1;
+    this->a &= getVal(this);
 
     uint8_t carry = (this->a & 1);
     this->a >>= 1;
@@ -871,61 +876,69 @@ void OP_6B(NES* this) {
     this->p.zero  = (this->a == 0);
     this->p.over  = ((this->a & 0x40) >> 6) ^ ((this->a & 0x20) >> 5);
     this->p.neg   = (this->a > 0x7F);
-
-    this->pc += 2;
 }
 
 // JMP i
 void OP_6C(NES* this) {
-    this->pc += VAL1;
-}
-
-// BVS
-void OP_70(NES* this) {
-    if (this->p.over) {
-        this->pc += (int8_t)(VAL1) + 2;
-        CHECK_PAGE(3);
+    uint8_t addr = getVal(this) + (getVal(this) << 8);
+    if (addr & 0xFF == 0xFF) {
+        this->pc = read(this, addr) + (read(this, addr & 0xFF00) << 8);
     } else {
-        this->pc += 2;
-        
+        this->pc = read(this, addr) + (read(this, addr + 1) << 8);
     }
-}
-
-// ADC (d),y
-void OP_71(NES* this) {
-    uint16_t addr = *index_dy(this, LE_ADDR);
-    OP_ADC(this, addr);
-    this->pc += 2;
 }
 
 // ADC a
 void OP_6D(NES* this) {
-    OP_ADC(this, *read(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    OP_ADC(this, read(this, addr));
 }
 
 // ROR a
 void OP_6E(NES* this) {
-    uint16_t addr = LE_ADDR;
-    uint8_t* mem = read(this, addr);
-    write(this, addr, *mem);
-
-    OP_ROR(this, mem);
-    write(this, addr, *mem);
-
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    uint8_t mem = read(this, addr);
+    write(this, addr, mem);
+    OP_ROR(this, &mem);
+    write(this, addr, mem);
 }
 
 // RRA a
 void OP_6F(NES* this) {
-    OP_RRA(this, read(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    uint8_t mem = read(this, addr);
+    write(this, addr, mem);
+    OP_RRA(this, &mem);
+    write(this, addr, mem);
+}
+
+// BVS
+void OP_70(NES* this) {
+    int8_t val = getVal(this);
+    if (!this->p.over) return;
+    uint16_t branch = (uint8_t)(this->pc + val) + this->pc & 0xFF00;
+    getVal(this);
+    if (branch == this->pc + val) {
+        this->pc = branch;
+        return;
+    }
+    getVal(this);
+    this->pc = this->pc + val;
+}
+
+// ADC (d),y
+void OP_71(NES* this) {
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    OP_ADC(this, index_dy(this, addr, NULL));
 }
 
 // RRA (d),y
 void OP_73(NES* this) {
-    OP_RRA(this, index_dy(this, LE_ADDR));
-    this->pc += 2;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    uint8_t mem = index_dy(this, addr, &addr);
+    write(this, addr, mem);
+    OP_RRA(this, &mem);
+    write(this, addr, mem);
 }
 
 // NOP d,x
@@ -937,25 +950,36 @@ void OP_74(NES* this) {
 
 // ADC d,x
 void OP_75(NES* this) {
-    OP_ADC(this, *index_zx(this, VAL1));
-    this->pc += 2;
+    uint8_t val = getVal(this);
+    read(this, val);
+    OP_ADC(this, index_zx(this, val, NULL));
 }
 
 // ROR d,x
 void OP_76(NES* this) {
-    OP_ROR(this, index_zx(this, VAL1));
-    this->pc += 2;
+    uint8_t val = getVal(this);
+    uint16_t addr;
+    read(this, val);
+    uint8_t mem = index_zx(this, val, &addr);
+    write(this, addr, mem);
+    OP_ROR(this, &mem);
+    write(this, addr, mem);
 }
 
 // RRA d,x
 void OP_77(NES* this) {
-    OP_RRA(this, index_zx(this, VAL1));
-    this->pc += 2;
+    uint8_t val = getVal(this);
+    uint16_t addr;
+    read(this, val);
+    uint8_t mem = index_zx(this, val, &addr);
+    write(this, addr, mem);
+    OP_RRA(this, &mem);
+    write(this, addr, mem);
 }
 
 // SEI
 void OP_78(NES* this) {
-    VAL1;
+    readVal(this);
     this->cycleFunc = CyclePLP;
     special_plp = 1;
     this->pc++;
@@ -963,8 +987,8 @@ void OP_78(NES* this) {
 
 // ADC a,y
 void OP_79(NES* this) {
-    OP_ADC(this, *index_ay(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    OP_ADC(this, index_ay(this, addr, NULL));
 }
 
 // NOP
@@ -974,60 +998,65 @@ void OP_7A(NES* this) {
 
 // RRA a,y
 void OP_7B(NES* this) {
-    OP_RRA(this, index_ay(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    uint8_t mem = index_ay(this, addr, &addr);
+    write(this, addr, mem);
+    OP_RRA(this, &mem);
+    write(this, addr, mem);
 }
 
-// IGN a,x
+// NOP a,x
 void OP_7C(NES* this) {
-    uint16_t addr = *index_ax(this, LE_ADDR);
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    index_ax(this, addr, NULL);
 }
 
 // ADC a,x
 void OP_7D(NES* this) {
-    OP_ADC(this, *index_ax(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    OP_ADC(this, index_ax(this, addr, NULL));
 }
 
 // ROR a,x
 void OP_7E(NES* this) {
-    uint16_t addr = LE_ADDR;
-    uint8_t* mem = index_ax(this, addr);
-    write(this, addr, *mem);
-
-    OP_ROR(this, mem);
-    write(this, addr, *mem);
-
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    uint8_t mem = index_ax(this, addr, &addr);
+    write(this, addr, mem);
+    OP_ROR(this, &mem);
+    write(this, addr, mem);
 }
 
 // RRA a,x
 void OP_7F(NES* this) {
-    OP_RRA(this, index_ax(this, LE_ADDR));
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    uint8_t mem = index_ax(this, addr, &addr);
+    write(this, addr, mem);
+    OP_RRA(this, &mem);
+    write(this, addr, mem);
 }
 
-// SKB #
+// NOP #
 void OP_80(NES* this) {
-    this->pc += 2;
+    getVal(this);
 }
 
 // STA (d,x)
 void OP_81(NES* this) {
-    write(this, *index_dx(this, VAL1), this->a);
-    this->pc += 2;
+    uint16_t addr;
+    index_dx(this, getVal(this), &addr);
+    write(this, addr, this->a);
 }
 
-// SKB #
+// NOP #
 void OP_82(NES* this) {
-    this->pc += 2;
+    getVal(this);
 }
 
 // SAX (d,x)
 void OP_83(NES* this) {
-    write(this, *index_dx(this, VAL1), this->a & this->x);
-    this->pc += 2;
+    uint16_t addr;
+    index_dx(this, getVal(this), &addr);
+    write(this, addr, this->a & this->x);
 }
 
 // STY d
@@ -1065,9 +1094,9 @@ void OP_88(NES* this) {
     this->pc++;
 }
 
-// SKB #
+// NOP #
 void OP_89(NES* this) {
-    this->pc += 2;
+    getVal(this);
 }
 
 // TXA
@@ -1461,9 +1490,9 @@ void OP_C1(NES* this) {
     this->pc += 2;
 }
 
-// SKB #
+// NOP #
 void OP_C2(NES* this) {
-    this->pc += 2;
+    getVal(this);
 }
 
 // DCP (d,x)
@@ -1653,7 +1682,7 @@ void OP_DB(NES* this) {
     this->pc += 3;
 }
 
-// IGN a,x
+// NOP a,x
 void OP_DC(NES* this) {
     uint16_t addr = *index_ax(this, LE_ADDR);
     this->pc += 3;
@@ -1695,9 +1724,9 @@ void OP_E1(NES* this) {
     this->pc += 2;
 }
 
-// SKB #
+// NOP #
 void OP_E2(NES* this) {
-    this->pc += 2;
+    getVal(this);
 }
 
 // ISC (d,x)
@@ -1860,7 +1889,7 @@ void OP_FB(NES* this) {
     this->pc += 3;
 }
 
-// IGN a,x
+// NOP a,x
 void OP_FC(NES* this) {
     uint16_t addr = *index_ax(this, LE_ADDR);
     this->pc += 3;
