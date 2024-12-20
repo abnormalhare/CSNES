@@ -248,14 +248,14 @@ void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
 uint16_t lastPC;
 void debugPrint(NES* this) {
     if (this->pc - lastPC > 1) {
-        printf("%02X ", *read(this, lastPC + 1));
+        printf("%02X ", read(this, lastPC + 1));
         if (this->pc - lastPC > 2) {
-            printf("%02X", *read(this, lastPC + 2));
+            printf("%02X", read(this, lastPC + 2));
         }
     } else if ((int32_t)lastPC - this->pc > 0) {
         printf("#loop#");
     }
-    printf("\n%X: %02X ", this->pc, *read(this, this->pc));
+    printf("\n%X: %02X ", this->pc, read(this, this->pc));
     lastPC = this->pc;
 }
 
@@ -263,12 +263,12 @@ void Cycle(NES* this) {
     uint32_t cycleCount;
 
     debugPrint(this);
-    opTable[*read(this, this->pc)](this);
+    opTable[getVal(this)](this);
 }
 
 void CyclePLP(NES* this) {
     debugPrint(this);
-    opTable[*read(this, this->pc)](this);
+    opTable[getVal(this)](this);
 
     this->p.intd = special_plp;
     this->cycleFunc = Cycle;

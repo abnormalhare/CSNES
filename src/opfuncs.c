@@ -32,9 +32,9 @@ void write(NES* this, uint16_t addr, uint8_t byte) {
     this->cycleCount++;
 }
 
-uint8_t* read(NES* this, uint16_t addr) {
+uint8_t read(NES* this, uint16_t addr) {
     uint16_t pos;
-    uint8_t* byte;
+    uint8_t byte;
 
     if (addr < 0x2000) {
         pos = addr % 0x800;
@@ -42,9 +42,9 @@ uint8_t* read(NES* this, uint16_t addr) {
     } else if (addr < 0x4000) {
         pos = (addr - 0x2000) % 8;
         switch (pos) {
-            case 2: byte = &this->PPURegs.PPUSTATUS; break;
-            case 4: byte = &this->PPURegs.OAMDATA;   break;
-            case 7: byte = &this->PPURegs.PPUDATA;   break;
+            case 2: byte = this->PPURegs.PPUSTATUS; break;
+            case 4: byte = this->PPURegs.OAMDATA;   break;
+            case 7: byte = this->PPURegs.PPUDATA;   break;
             default:
                 printf("ERROR: read on non-readable PPU instruction (temporary)");
                 exit(EXIT_FAILURE);
@@ -57,11 +57,16 @@ uint8_t* read(NES* this, uint16_t addr) {
             pos %= 0x4000;
         }
 
-        byte = &this->PRGROM[pos];
+        byte = this->PRGROM[pos];
     }
 
     this->cycleCount++;
     return byte;
+}
+
+// 1 cycle
+uint8_t getVal(NES* this) {
+    return read(this, this->pc++);
 }
 
 void ntrnlop(NES* this) {
@@ -69,63 +74,95 @@ void ntrnlop(NES* this) {
 }
 
 void setupPC(NES* this) {
-    this->pc = *read(this, this->pc) + (*read(this, this->pc + 1) << 8);
+    this->pc = read(this, this->pc) + (read(this, this->pc + 1) << 8);
 }
 
 void push(NES* this, uint8_t byte) {
     write(this, this->sp--, byte);
 }
 
-uint8_t* pop(NES* this) {
+// 1 cycle
+uint8_t pop(NES* this, uint16_t* addr) {
+    *addr = this->sp;
     return read(this, this->sp++);
 }
 
-uint8_t* index_zx(NES* this, uint8_t byte) {
-    return read(this, (uint8_t)(this->x + byte));
+uint8_t index_z(NES* this, uint8_t byte, uint16_t* addr) {
+    *addr = byte;
+    return read(this, *addr);
 }
 
-uint8_t* index_zy(NES* this, uint8_t byte) {
-    return read(this, (uint8_t)(this->y + byte));
+// 1 cycle
+uint8_t index_zx(NES* this, uint8_t byte, uint16_t* addr) {
+    *addr = (uint8_t)(this->x + byte);
+    return read(this, *addr);
 }
 
-uint8_t* index_ax(NES* this, uint16_t addr) {
+// 1 cycle
+uint8_t index_zy(NES* this, uint8_t byte, uint16_t* addr) {
+    *addr = (uint8_t)(this->y + byte);
+    return read(this, *addr);
+}
+
+// 1 cycle
+uint8_t index_a(NES* this, uint16_t byte, uint16_t* addr) {
+    *addr = byte;
+    return read(this, *addr);
+}
+
+// 1 cycle, 2 if page crossed
+uint8_t index_ax(NES* this, uint16_t byte, uint16_t* addr) {
     uint8_t val;
-    uint16_t badAddr = (uint8_t)(addr + this->x) + (addr & 0xF0);
+    uint16_t badAddr = (uint8_t)(byte + this->x) + (byte & 0xF0);
 
-    val = read(this, badAddr);
-    if (badAddr != addr + this->x) {
-        val = read(this, addr + this->x);
+    *addr = badAddr;
+    val = read(this, *addr);
+    if (badAddr != byte + this->x) {
+        *addr = byte + this->x;
+        val = read(this, *addr);
     }
 
     return val;
 }
 
-uint8_t* index_ay(NES* this, uint16_t addr) {
+// 1 cycle, 2 if page crossed
+uint8_t index_ay(NES* this, uint16_t byte, uint16_t* addr) {
     uint8_t val;
-    uint16_t badAddr = (uint8_t)(addr + this->y) + (addr & 0xF0);
 
-    val = read(this, badAddr);
-    if (badAddr != addr + this->y) {
-        val = read(this, addr + this->y);
+    *addr = (uint8_t)(byte + this->y) + (byte & 0xF0);
+    val = read(this, *addr);
+    if (*addr != byte + this->y) {
+        *addr = byte + this->y;
+        val = read(this, *addr);
     }
 
     return val;
 }
 
-uint8_t* index_dx(NES* this, uint8_t ind) {
-    read(this, ind);
-    uint8_t val = ind + this->x;
-    uint16_t al = *read(this, val);
-    uint16_t ah = *read(this, (uint8_t)(val + 1));
+// 4 cycles
+uint8_t index_dx(NES* this, uint8_t byte, uint16_t* addr) {
+    read(this, byte);
+    uint8_t val = byte + this->x;
+    uint8_t al = read(this, val);
+    uint8_t ah = read(this, (uint8_t)(val + 1));
 
-    return read(this, al + (ah << 8));
+    *addr = al + (ah << 8);
+    return read(this, *addr);
 }
 
-uint8_t* index_dy(NES* this, uint8_t ind) {
-    uint16_t r = *read(this, ind) + *read(this, (ind + 1) % 256) * 256;
-    page_crossed = ((r % 256) + this->y > 0xFF);
+// 4 cycles, 5 if page crossed
+uint8_t index_dy(NES* this, uint8_t byte, uint16_t* addr) {
+    uint8_t al = read(this, byte);
+    uint8_t ah = read(this, (uint8_t)(byte + 1));
+    *addr = (uint8_t)(al + this->y) + (ah << 8);
+    uint16_t truAddr = (al + this->y) + (ah << 8);
 
-    return read(this, r + this->y);
+    uint8_t val = read(this, *addr);
+    if (*addr != truAddr) {
+        *addr = truAddr;
+        val = read(this, *addr);
+    }
+    return val;
 }
 
 void OP_ADC(NES* this, uint16_t mem) {

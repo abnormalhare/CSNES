@@ -10,6 +10,7 @@
         "iosfwd": "c",
         "limits": "c",
         "__config": "c",
-        "compare": "c"
+        "compare": "c",
+        "cstddef": "c"
     }
 }
