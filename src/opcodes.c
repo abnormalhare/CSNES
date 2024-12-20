@@ -143,15 +143,21 @@ void OP_0F(NES* this) {
 // BPL
 void OP_10(NES* this) {
     int8_t val = getVal(this);
+    uint8_t lo;
+    int16_t addrAdd;
+    uint16_t branch;
+
     if (this->p.neg) return;
-    uint16_t branch = (uint8_t)(this->pc + val) + this->pc & 0xFF00;
+    lo = (int8_t)(this->pc) + val;
+    branch = lo + this->pc & 0xFF00;
     getVal(this);
     if (branch == this->pc + val) {
         this->pc = branch;
         return;
     }
     getVal(this);
-    this->pc = this->pc + val;
+    int16_t addrAddr = (int16_t)(this->pc) + val;
+    this->pc = addrAdd;
 }
 
 // ORA (d),y
@@ -406,15 +412,21 @@ void OP_2F(NES* this) {
 // BMI
 void OP_30(NES* this) {
     int8_t val = getVal(this);
+    uint8_t lo;
+    int16_t addrAdd;
+    uint16_t branch;
+
     if (!this->p.neg) return;
-    uint16_t branch = (uint8_t)(this->pc + val) + this->pc & 0xFF00;
+    lo = (int8_t)(this->pc) + val;
+    branch = lo + this->pc & 0xFF00;
     getVal(this);
     if (branch == this->pc + val) {
         this->pc = branch;
         return;
     }
     getVal(this);
-    this->pc = this->pc + val;
+    int16_t addrAddr = (int16_t)(this->pc) + val;
+    this->pc = addrAdd;
 }
 
 // AND (d),y
@@ -658,15 +670,21 @@ void OP_4F(NES* this) {
 // BVC
 void OP_50(NES* this) {
     int8_t val = getVal(this);
+    uint8_t lo;
+    int16_t addrAdd;
+    uint16_t branch;
+
     if (this->p.over) return;
-    uint16_t branch = (uint8_t)(this->pc + val) + this->pc & 0xFF00;
+    lo = (int8_t)(this->pc) + val;
+    branch = lo + this->pc & 0xFF00;
     getVal(this);
     if (branch == this->pc + val) {
         this->pc = branch;
         return;
     }
     getVal(this);
-    this->pc = this->pc + val;
+    int16_t addrAddr = (int16_t)(this->pc) + val;
+    this->pc = addrAdd;
 }
 
 // EOR (d),y
@@ -915,15 +933,21 @@ void OP_6F(NES* this) {
 // BVS
 void OP_70(NES* this) {
     int8_t val = getVal(this);
+    uint8_t lo;
+    int16_t addrAdd;
+    uint16_t branch;
+
     if (!this->p.over) return;
-    uint16_t branch = (uint8_t)(this->pc + val) + this->pc & 0xFF00;
+    lo = (int8_t)(this->pc) + val;
+    branch = lo + this->pc & 0xFF00;
     getVal(this);
     if (branch == this->pc + val) {
         this->pc = branch;
         return;
     }
     getVal(this);
-    this->pc = this->pc + val;
+    int16_t addrAddr = (int16_t)(this->pc) + val;
+    this->pc = addrAdd;
 }
 
 // ADC (d),y
@@ -1042,8 +1066,7 @@ void OP_80(NES* this) {
 
 // STA (d,x)
 void OP_81(NES* this) {
-    uint16_t addr;
-    index_dx(this, getVal(this), &addr);
+    uint16_t addr = index_dxw(this, getVal(this));
     write(this, addr, this->a);
 }
 
@@ -1054,44 +1077,37 @@ void OP_82(NES* this) {
 
 // SAX (d,x)
 void OP_83(NES* this) {
-    uint16_t addr;
-    index_dx(this, getVal(this), &addr);
+    uint16_t addr = index_dxw(this, getVal(this));
     write(this, addr, this->a & this->x);
 }
 
 // STY d
 void OP_84(NES* this) {
-    write(this, VAL1, this->y);
-    this->pc += 2;
+    write(this, getVal(this), this->y);
 }
 
 // STA d
 void OP_85(NES* this) {
-    write(this, VAL1, this->a);
-    this->pc += 2;
+    write(this, getVal(this), this->a);
 }
 
 // STX d
 void OP_86(NES* this) {
-    write(this, VAL1, this->x);
-    this->pc += 2;
+    write(this, getVal(this), this->x);
 }
 
 // SAX d
 void OP_87(NES* this) {
-    write(this, VAL1, this->a & this->x);
-    this->pc += 2;
+    write(this, getVal(this), this->a & this->x);
 }
 
 // DEY
 void OP_88(NES* this) {
-    VAL1;
+    readVal(this);
     this->y--;
 
     this->p.zero = (this->y == 0);
     this->p.neg  = (this->y > 0x7F);
-
-    this->pc++;
 }
 
 // NOP #
@@ -1101,111 +1117,104 @@ void OP_89(NES* this) {
 
 // TXA
 void OP_8A(NES* this) {
-    VAL1;
+    readVal(this);
     this->a = this->x;
 
     this->p.zero = (this->a == 0);
     this->p.neg  = (this->a > 0x7F);
-    
-    this->pc++;
 }
 
 // XAA # UNSTABLE
 void OP_8B(NES* this) {
-    this->a = (this->a | 0xEE) & this->x & VAL1;
+    this->a = (this->a | 0xEE) & this->x & getVal(this);
 
     this->p.zero = (this->a == 0);
     this->p.neg  = (this->a > 0x7F);
-
-    this->pc += 2;
 }
 
 // STY a
 void OP_8C(NES* this) {
-    write(this, LE_ADDR, this->y);
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    write(this, addr, this->y);
 }
 
 // STA a
 void OP_8D(NES* this) {
-    write(this, LE_ADDR, this->a);
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    write(this, addr, this->a);
 }
 
 // STX a
 void OP_8E(NES* this) {
-    write(this, LE_ADDR, this->x);
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    write(this, addr, this->x);
 }
 
 // SAX a
 void OP_8F(NES* this) {
-    write(this, LE_ADDR, this->a & this->x);
-    this->pc += 3;
+    uint16_t addr = getVal(this) + (getVal(this) << 8);
+    write(this, addr, this->a & this->x);
 }
 
 // BCC
 void OP_90(NES* this) {
-    if (!this->p.carry) {
-        this->pc += (int8_t)(VAL1) + 2;
-        CHECK_PAGE(3);
-    } else {
-        this->pc += 2;
-        
+    int8_t val = getVal(this);
+    uint8_t lo;
+    int16_t addrAdd;
+    uint16_t branch;
+
+    if (this->p.carry) return;
+    lo = (int8_t)(this->pc) + val;
+    branch = lo + this->pc & 0xFF00;
+    getVal(this);
+    if (branch == this->pc + val) {
+        this->pc = branch;
+        return;
     }
+    getVal(this);
+    int16_t addrAddr = (int16_t)(this->pc) + val;
+    this->pc = addrAdd;
 }
 
 // STA (d,x)
 void OP_91(NES* this) {
-    uint8_t* val = index_dx(this, VAL1);
-    *val = this->a;
-
-    this->pc += 2;
+    uint16_t val = index_dxw(this, getVal(this));
+    write(this, val, this->a);
 }
 
-// AHX (d),y UNSTABLE, GUESS
+// AHX (d),y UNSTABLE
 void OP_93(NES* this) {
-    uint8_t* val = index_dy(this, VAL1);
-    *val = this->a & this->x & ((VAL1 >> 4) + 1);
-
-    this->pc += 2;
+    uint8_t mem = index_dyw(this, getVal(this));
+    write(this, mem, this->a & this->x & ((mem >> 4) + 1));
 }
 
 // STY d,x
 void OP_94(NES* this) {
-    uint8_t* val = index_zx(this, VAL1);
-    *val = this->y;
-
-    this->pc += 2;
+    uint8_t val = index_zxw(this, getVal(this));
+    write(this, val, this->y);
 }
 
 // STA d,x
 void OP_95(NES* this) {
-    uint8_t* val = index_zx(this, VAL1);
-    *val = this->a;
-
-    this->pc += 2;
+    uint8_t val = index_zxw(this, getVal(this));
+    write(this, val, this->a);
 }
 
 // STX d,y
 void OP_96(NES* this) {
-    uint8_t* val = index_zy(this, VAL1);
-    *val = this->x;
-
-    this->pc += 2;
+    uint8_t val = index_zxw(this, getVal(this));
+    write(this, val, this->x);
 }
 
 // SAX d,y
 void OP_97(NES* this) {
-    uint8_t* val = index_zy(this, VAL1);
-    *val = this->a & this->x;
-
-    this->pc += 2;
+    uint8_t val = index_zxw(this, getVal(this));
+    write(this, val, this->a & this->x);
 }
 
 // TYA
 void OP_98(NES* this) {
-    VAL1;
+    readVal(this);
     this->a = this->y;
 
     this->p.zero = (this->a == 0);

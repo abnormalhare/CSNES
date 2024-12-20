@@ -183,3 +183,28 @@ uint8_t index_dy(NES* this, uint8_t byte, uint16_t* addr) {
 
     return val;
 }
+
+// 3 cycles
+uint16_t index_dxw(NES* this, uint8_t byte) {
+    read(this, byte);
+    uint8_t val = byte + this->x;
+    uint8_t al = read(this, val);
+    uint8_t ah = read(this, (uint8_t)(val + 1));
+
+    return al + (ah << 8);
+}
+
+// 3 cycles
+uint16_t index_dyw(NES* this, uint8_t byte) {
+    uint8_t al = read(this, byte);
+    uint8_t ah = read(this, (uint8_t)(byte + 1));
+    read(this, (uint8_t)(al + this->y) + (ah << 8));
+
+    return al + (ah << 8) + this->y;
+}
+
+// 1 cycle
+uint8_t index_zxw(NES* this, uint8_t byte) {
+    read(this, byte);
+    return byte + this->x;
+}
