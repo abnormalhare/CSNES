@@ -2,8 +2,8 @@
 #define OPCODES_H
 
 #include "nes.h"
-#include "opfuncs.h"
 #include "rw.h"
+#include "opfuncs.h"
 
 #define CHECK_PAGE(f)     \
     if (page_crossed) {   \

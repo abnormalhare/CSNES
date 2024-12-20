@@ -143,21 +143,14 @@ void OP_0F(NES* this) {
 // BPL
 void OP_10(NES* this) {
     int8_t val = getVal(this);
-    uint8_t lo;
-    int16_t addrAdd;
-    uint16_t branch;
-
+    int16_t pc = this->pc;
     if (this->p.neg) return;
-    lo = (int8_t)(this->pc) + val;
-    branch = lo + this->pc & 0xFF00;
-    getVal(this);
-    if (branch == this->pc + val) {
-        this->pc = branch;
-        return;
+    pc += val;
+    readVal(this);
+    if ((uint16_t)(pc) & 0xFF00 != this->pc & 0xFF00) {
+        readVal(this);
     }
-    getVal(this);
-    int16_t addrAddr = (int16_t)(this->pc) + val;
-    this->pc = addrAdd;
+    this->pc = pc;
 }
 
 // ORA (d),y
@@ -412,21 +405,14 @@ void OP_2F(NES* this) {
 // BMI
 void OP_30(NES* this) {
     int8_t val = getVal(this);
-    uint8_t lo;
-    int16_t addrAdd;
-    uint16_t branch;
-
+    int16_t pc = this->pc;
     if (!this->p.neg) return;
-    lo = (int8_t)(this->pc) + val;
-    branch = lo + this->pc & 0xFF00;
-    getVal(this);
-    if (branch == this->pc + val) {
-        this->pc = branch;
-        return;
+    pc += val;
+    readVal(this);
+    if ((uint16_t)(pc) & 0xFF00 != this->pc & 0xFF00) {
+        readVal(this);
     }
-    getVal(this);
-    int16_t addrAddr = (int16_t)(this->pc) + val;
-    this->pc = addrAdd;
+    this->pc = pc;
 }
 
 // AND (d),y
@@ -668,21 +654,14 @@ void OP_4F(NES* this) {
 // BVC
 void OP_50(NES* this) {
     int8_t val = getVal(this);
-    uint8_t lo;
-    int16_t addrAdd;
-    uint16_t branch;
-
+    int16_t pc = this->pc;
     if (this->p.over) return;
-    lo = (int8_t)(this->pc) + val;
-    branch = lo + this->pc & 0xFF00;
-    getVal(this);
-    if (branch == this->pc + val) {
-        this->pc = branch;
-        return;
+    pc += val;
+    readVal(this);
+    if ((uint16_t)(pc) & 0xFF00 != this->pc & 0xFF00) {
+        readVal(this);
     }
-    getVal(this);
-    int16_t addrAddr = (int16_t)(this->pc) + val;
-    this->pc = addrAdd;
+    this->pc = pc;
 }
 
 // EOR (d),y
@@ -930,21 +909,14 @@ void OP_6F(NES* this) {
 // BVS
 void OP_70(NES* this) {
     int8_t val = getVal(this);
-    uint8_t lo;
-    int16_t addrAdd;
-    uint16_t branch;
-
+    int16_t pc = this->pc;
     if (!this->p.over) return;
-    lo = (int8_t)(this->pc) + val;
-    branch = lo + this->pc & 0xFF00;
-    getVal(this);
-    if (branch == this->pc + val) {
-        this->pc = branch;
-        return;
+    pc += val;
+    readVal(this);
+    if ((uint16_t)(pc) & 0xFF00 != this->pc & 0xFF00) {
+        readVal(this);
     }
-    getVal(this);
-    int16_t addrAddr = (int16_t)(this->pc) + val;
-    this->pc = addrAdd;
+    this->pc = pc;
 }
 
 // ADC (d),y
@@ -1155,21 +1127,14 @@ void OP_8F(NES* this) {
 // BCC
 void OP_90(NES* this) {
     int8_t val = getVal(this);
-    uint8_t lo;
-    int16_t addrAdd;
-    uint16_t branch;
-
+    int16_t pc = this->pc;
     if (this->p.carry) return;
-    lo = (int8_t)(this->pc) + val;
-    branch = lo + this->pc & 0xFF00;
-    getVal(this);
-    if (branch == this->pc + val) {
-        this->pc = branch;
-        return;
+    pc += val;
+    readVal(this);
+    if ((uint16_t)(pc) & 0xFF00 != this->pc & 0xFF00) {
+        readVal(this);
     }
-    getVal(this);
-    int16_t addrAddr = (int16_t)(this->pc) + val;
-    this->pc = addrAdd;
+    this->pc = pc;
 }
 
 // STA (d,x)
@@ -1363,21 +1328,14 @@ void OP_AF(NES* this) {
 // BCS
 void OP_B0(NES* this) {
     int8_t val = getVal(this);
-    uint8_t lo;
-    int16_t addrAdd;
-    uint16_t branch;
-
+    int16_t pc = this->pc;
     if (!this->p.carry) return;
-    lo = (int8_t)(this->pc) + val;
-    branch = lo + this->pc & 0xFF00;
-    getVal(this);
-    if (branch == this->pc + val) {
-        this->pc = branch;
-        return;
+    pc += val;
+    readVal(this);
+    if ((uint16_t)(pc) & 0xFF00 != this->pc & 0xFF00) {
+        readVal(this);
     }
-    getVal(this);
-    int16_t addrAddr = (int16_t)(this->pc) + val;
-    this->pc = addrAdd;
+    this->pc = pc;
 }
 
 // LDA (d),y
@@ -1524,14 +1482,11 @@ void OP_C8(NES* this) {
 
     this->p.zero = (this->y == 0);
     this->p.neg  = (this->y > 0x7F);
-
-    this->pc++;
 }
 
 // CMP #
 void OP_C9(NES* this) {
     OP_CMP(this, getVal(this));
-    this->pc++;
 }
 
 // DEX
@@ -1540,8 +1495,6 @@ void OP_CA(NES* this) {
     this->x--;
     this->p.zero = (this->x == 0);
     this->p.neg  = (this->x > 0x7F);
-
-    this->pc++;
 }
 
 // AXS #
@@ -1592,21 +1545,14 @@ void OP_CF(NES* this) {
 // BNE
 void OP_D0(NES* this) {
     int8_t val = getVal(this);
-    uint8_t lo;
-    int16_t addrAdd;
-    uint16_t branch;
-
+    int16_t pc = this->pc;
     if (this->p.zero) return;
-    lo = (int8_t)(this->pc) + val;
-    branch = lo + this->pc & 0xFF00;
-    getVal(this);
-    if (branch == this->pc + val) {
-        this->pc = branch;
-        return;
+    pc += val;
+    readVal(this);
+    if ((uint16_t)(pc) & 0xFF00 != this->pc & 0xFF00) {
+        readVal(this);
     }
-    getVal(this);
-    int16_t addrAddr = (int16_t)(this->pc) + val;
-    this->pc = addrAdd;
+    this->pc = pc;
 }
 
 // CMP (d),y
@@ -1822,21 +1768,14 @@ void OP_EF(NES* this) {
 // BEQ
 void OP_F0(NES* this) {
     int8_t val = getVal(this);
-    uint8_t lo;
-    int16_t addrAdd;
-    uint16_t branch;
-
+    int16_t pc = this->pc;
     if (!this->p.zero) return;
-    lo = (int8_t)(this->pc) + val;
-    branch = lo + this->pc & 0xFF00;
-    getVal(this);
-    if (branch == this->pc + val) {
-        this->pc = branch;
-        return;
+    pc += val;
+    readVal(this);
+    if ((uint16_t)(pc) & 0xFF00 != this->pc & 0xFF00) {
+        readVal(this);
     }
-    getVal(this);
-    int16_t addrAddr = (int16_t)(this->pc) + val;
-    this->pc = addrAdd;
+    this->pc = pc;
 }
 
 // SBC (d),y

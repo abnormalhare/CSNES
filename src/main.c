@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     FILE* file;
     size_t filesize;
 
-    if (argc != 2) {
+    if (argc != 3) {
         printf("Format: %s <ROM> <scale>\n", argv[0]);
         return 1;
     }
@@ -78,14 +78,15 @@ int main(int argc, char* argv[]) {
     nes = newNES();
     NESLoadROM(nes, file, filename, filesize);
 
-    setupPC(nes);
+    // setupPC(nes);
 
     lastTime = timeInNanoseconds();
     while (!nes->jam) {
         nes->cycleFunc(nes);
-        if (nes->cycleCount >= 29781) {
-            while (timeInNanoseconds() - lastTime < 1E9);
-            lastTime = timeInNanoseconds();
+        if (nes->cycleCount >= 10/*29781*/) {
+            // while (timeInNanoseconds() - lastTime < 1E7);
+            // lastTime = timeInNanoseconds();
+            // nes->cycleCount = 0;
         }
     }
 

@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/CSNES.exe",
-            "args": ["nestest.nes"],
+            "args": ["nestest.nes", "1"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build",
