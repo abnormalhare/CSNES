@@ -321,7 +321,7 @@ void OP_26(NES* this) {
     uint8_t val = getVal(this);
     uint8_t mem = read(this, val);
     write(this, val, mem);
-    OP_ROL(this, mem);
+    OP_ROL(this, &mem);
     write(this, val, mem);
 }
 
@@ -330,7 +330,7 @@ void OP_27(NES* this) {
     uint8_t val = getVal(this);
     uint8_t mem = read(this, val);
     write(this, val, mem);
-    OP_RLA(this, mem);
+    OP_RLA(this, &mem);
     write(this, val, mem);
 }
 
@@ -440,7 +440,7 @@ void OP_31(NES* this) {
 void OP_33(NES* this) {
     uint8_t val = getVal(this);
     uint16_t addr;
-    uint8_t mem = index_dy(this, val, addr);
+    uint8_t mem = index_dy(this, val, &addr);
     write(this, addr, mem);
     OP_RLA(this, &mem);
     write(this, addr, mem);
@@ -573,7 +573,7 @@ void OP_43(NES* this) {
     uint16_t addr;
     uint8_t mem = index_dx(this, val, &addr);
     write(this, addr, mem);
-    OP_SRE(this, mem);
+    OP_SRE(this, &mem);
     write(this, addr, mem);
 }
 
@@ -1678,7 +1678,7 @@ void OP_DB(NES* this) {
     uint16_t addr = getVal(this) + (getVal(this) << 8);
     uint8_t mem = index_ay(this, addr, &addr);
     write(this, addr, mem);
-    OP_DCP(this, mem);
+    OP_DCP(this, &mem);
     write(this, addr, mem);
 }
 
@@ -1733,7 +1733,7 @@ void OP_E3(NES* this) {
     uint16_t addr;
     uint8_t mem = index_dx(this, val, &addr);
     write(this, addr, mem);
-    OP_ISC(this, mem);
+    OP_ISC(this, &mem);
     write(this, addr, mem);
 }
 
@@ -1752,7 +1752,7 @@ void OP_E6(NES* this) {
     uint8_t val = getVal(this);
     uint8_t mem = read(this, val);
     write(this, val, mem);
-    OP_INC(this, mem);
+    OP_INC(this, &mem);
     write(this, val, mem);
 }
 
@@ -1761,7 +1761,7 @@ void OP_E7(NES* this) {
     uint8_t val = getVal(this);
     uint8_t mem = read(this, val);
     write(this, val, mem);
-    OP_ISC(this, mem);
+    OP_ISC(this, &mem);
     write(this, val, mem);
 }
 
@@ -1777,7 +1777,6 @@ void OP_E8(NES* this) {
 // SBC #
 void OP_E9(NES* this) {
     OP_SBC(this, getVal(this));
-    this->pc += 2;
 }
 
 // NOP
@@ -1788,7 +1787,6 @@ void OP_EA(NES* this) {
 // USBC #
 void OP_EB(NES* this) {
     OP_SBC(this, getVal(this));
-    this->pc += 2;
 }
 
 // CPX a
@@ -1815,7 +1813,10 @@ void OP_EE(NES* this) {
 // ISC a
 void OP_EF(NES* this) {
     uint16_t addr = getVal(this) + (getVal(this) << 8);
-    OP_ISC(this, read(this, addr));
+    uint8_t mem = read(this, addr);
+    write(this, addr, mem);
+    OP_ISC(this, &mem);
+    write(this, addr, mem);
 }
 
 // BEQ
@@ -1840,7 +1841,7 @@ void OP_F0(NES* this) {
 
 // SBC (d),y
 void OP_F1(NES* this) {
-    OP_SBC(this, index_dy(this, getVal(this)));
+    OP_SBC(this, index_dy(this, getVal(this), NULL));
 }
 
 // ISC (d),y
