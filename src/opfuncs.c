@@ -69,6 +69,10 @@ uint8_t getVal(NES* this) {
     return read(this, this->pc++);
 }
 
+uint8_t readVal(NES* this) {
+    return read(this, this->pc);
+}
+
 void ntrnlop(NES* this) {
     this->cycleCount++;
 }
@@ -113,13 +117,17 @@ uint8_t index_a(NES* this, uint16_t byte, uint16_t* addr) {
 // 1 cycle, 2 if page crossed
 uint8_t index_ax(NES* this, uint16_t byte, uint16_t* addr) {
     uint8_t val;
-    uint16_t badAddr = (uint8_t)(byte + this->x) + (byte & 0xF0);
 
-    *addr = badAddr;
-    val = read(this, *addr);
-    if (badAddr != byte + this->x) {
-        *addr = byte + this->x;
+    if (addr == NULL) {
+        read(this, (uint8_t)(byte + this->x) + (byte & 0xF0));
+        val = read(this, byte + this->x);
+    } else {
+        *addr = (uint8_t)(byte + this->x) + (byte & 0xF0);
         val = read(this, *addr);
+        if (*addr != byte + this->x) {
+            *addr = byte + this->x;
+            val = read(this, *addr);
+        }
     }
 
     return val;
@@ -129,11 +137,16 @@ uint8_t index_ax(NES* this, uint16_t byte, uint16_t* addr) {
 uint8_t index_ay(NES* this, uint16_t byte, uint16_t* addr) {
     uint8_t val;
 
-    *addr = (uint8_t)(byte + this->y) + (byte & 0xF0);
-    val = read(this, *addr);
-    if (*addr != byte + this->y) {
-        *addr = byte + this->y;
+    if (addr == NULL) {
+        read(this, (uint8_t)(byte + this->y) + (byte & 0xF0));
+        val = read(this, byte + this->y);
+    } else {
+        *addr = (uint8_t)(byte + this->y) + (byte & 0xF0);
         val = read(this, *addr);
+        if (*addr != byte + this->y) {
+            *addr = byte + this->y;
+            val = read(this, *addr);
+        }
     }
 
     return val;
@@ -154,14 +167,22 @@ uint8_t index_dx(NES* this, uint8_t byte, uint16_t* addr) {
 uint8_t index_dy(NES* this, uint8_t byte, uint16_t* addr) {
     uint8_t al = read(this, byte);
     uint8_t ah = read(this, (uint8_t)(byte + 1));
-    *addr = (uint8_t)(al + this->y) + (ah << 8);
-    uint16_t truAddr = (al + this->y) + (ah << 8);
+    uint8_t val;
 
-    uint8_t val = read(this, *addr);
-    if (*addr != truAddr) {
-        *addr = truAddr;
+    if (addr == NULL) {
+        read(this, (uint8_t)(al + this->y) + (ah << 8));
+        val = read(this, al + (ah << 8));
+    } else {
+        *addr = (uint8_t)(al + this->y) + (ah << 8);
+        uint16_t truAddr = (al + this->y) + (ah << 8);
+
         val = read(this, *addr);
+        if (*addr != truAddr) {
+            *addr = truAddr;
+            val = read(this, *addr);
+        }
     }
+
     return val;
 }
 

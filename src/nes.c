@@ -187,9 +187,6 @@ void NESLoadRAM(NES* this, uint8_t* bytes) {
     for (i = 0; i < this->header.chrrom_size * 0x2000; i++, fAddr++) {
         chrROM[i] = bytes[fAddr];
     }
-
-    // temporary
-    this->PPURegs.PPUSTATUS = 0xFF;
 }
 
 void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {

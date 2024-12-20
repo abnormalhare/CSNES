@@ -9,6 +9,7 @@ extern uint32_t page_crossed;
 
 void write(NES* this, uint16_t addr, uint8_t byte);
 uint8_t read(NES* this, uint16_t addr);
+uint8_t readVal(NES* this);
 uint8_t getVal(NES* this);
 void ntrnlop(NES* this);
 
