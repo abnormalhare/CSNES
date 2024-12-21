@@ -7,19 +7,22 @@
 #include <math.h>
 
 #include "cycle.h"
+#include "mapper.h"
 
 typedef struct _status {
     union {
-        uint8_t carry : 1;
-        uint8_t zero  : 1;
-        uint8_t intd  : 1;
-        uint8_t dec   : 1;
-        uint8_t brk   : 1;
-        uint8_t unused : 1;
-        uint8_t over  : 1;
-        uint8_t neg   : 1;
+        struct {
+            uint8_t carry : 1;
+            uint8_t zero  : 1;
+            uint8_t intd  : 1;
+            uint8_t dec   : 1;
+            uint8_t brk   : 1;
+            uint8_t unused : 1;
+            uint8_t over  : 1;
+            uint8_t neg   : 1;
+        };
+        uint8_t flags;
     };
-    uint8_t flags;
 } Status;
 
 typedef struct _header {
@@ -106,7 +109,22 @@ typedef struct _ppuregs {
 } PpuRegs;
 
 typedef struct _ppu {
-    char unk[0x4];
+    uint8_t patTbl0[0x1000];
+    uint8_t patTbl1[0x1000];
+
+    uint8_t namTbl0[0x3C0];
+    uint8_t attrTbl0[0x40];
+    uint8_t namTbl1[0x3C0];
+    uint8_t attrTbl1[0x40];
+    uint8_t namTbl2[0x3C0];
+    uint8_t attrTbl2[0x40];
+    uint8_t namTbl3[0x3C0];
+    uint8_t attrTbl3[0x40];
+
+    uint8_t imgPal[0x10];
+    uint8_t sprPal[0x10];
+
+    
 } PPU;
 
 typedef struct _NES {
@@ -118,12 +136,14 @@ typedef struct _NES {
     uint8_t sp;
     Status p;
 
+    Header header;
+
     uint8_t RAM[0x800];
     PpuRegs PPURegs;
     uint8_t SRAM[0x2000];
     uint8_t PRGROM[0x8000];
 
-    Header header;
+    PPU ppu;
 
     uint32_t cycleCount;
     void (*cycleFunc)(struct _NES*);

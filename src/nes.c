@@ -157,36 +157,7 @@ void NESLoadMem2(NES* this) {
 }
 
 void NESLoadRAM(NES* this, uint8_t* bytes) {
-    int rAddr = 0;
-    int fAddr = 0;
-    int i;
-
-    // if (this->header.has_battery) {
-    //     rAddr = 0x6000;
-    // }
-
-    if (this->header.has_trainer) {
-        for (i = 0x7000; i < 0x7200; i++, fAddr++) {
-            this->SRAM[i + 0x7000] = bytes[fAddr];
-        }
-    }
-
-    if (this->header.prgrom_size == 1) {
-        for (i = 0; i < 0x4000; i++, fAddr++) {
-            prgROM[i] = this->PRGROM[i] = bytes[fAddr];
-        }
-    } else {
-        for (i = 0; i < 0x8000; i++, fAddr++) {
-            prgROM[i] = this->PRGROM[i] = bytes[fAddr];
-        }
-        for (; i < this->header.prgrom_size * 0x4000; i++, fAddr++) {
-            prgROM[i] = bytes[fAddr];
-        }
-    }
-
-    for (i = 0; i < this->header.chrrom_size * 0x2000; i++, fAddr++) {
-        chrROM[i] = bytes[fAddr];
-    }
+    determineMapper(this, bytes);
 }
 
 void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
@@ -200,6 +171,12 @@ void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
     this->pc = 0xC000;
     this->sp = 0xFF;
     this->p.flags = 0;
+    this->p.intd = 1;
+
+    this->PPURegs.PPUCTRL = 0;
+    this->PPURegs.PPUMASK = 0;
+    this->PPURegs.PPUSTATUS = 0;
+    this->PPURegs.OAMADDR = 0;
 
     fread(header, sizeof(uint8_t), 0x10, file);
 

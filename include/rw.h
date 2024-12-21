@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "cycle.h"
 #include "nes.h"
+#include "ppu.h"
 
 void write(NES* this, uint16_t addr, uint8_t byte);
 uint8_t read(NES* this, uint16_t addr);

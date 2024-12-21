@@ -83,11 +83,14 @@ int main(int argc, char* argv[]) {
     lastTime = timeInNanoseconds();
     while (!nes->jam) {
         nes->cycleFunc(nes);
-        if (nes->cycleCount >= 10/*29781*/) {
+        if (nes->pc > 0xD000 || nes->pc < 0xC000) {
+            printf("! WARNING !");
+        }
+        // if (nes->cycleCount >= 10/*29781*/) {
             // while (timeInNanoseconds() - lastTime < 1E7);
             // lastTime = timeInNanoseconds();
             // nes->cycleCount = 0;
-        }
+        // }
     }
 
     return 0;

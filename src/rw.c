@@ -27,6 +27,9 @@ void write(NES* this, uint16_t addr, uint8_t byte) {
         this->PRGROM[pos] = byte;
     }
 
+    PPUCycle(this);
+    PPUCycle(this);
+    PPUCycle(this);
     this->cycleCount++;
 }
 
@@ -162,9 +165,9 @@ uint8_t index_dx(NES* this, uint8_t byte, uint16_t* addr) {
     uint8_t val = byte + this->x;
     uint8_t al = read(this, val);
     uint8_t ah = read(this, (uint8_t)(val + 1));
-
-    *addr = al + (ah << 8);
-    return read(this, *addr);
+    uint16_t a = al + (ah << 8);
+    if (addr != NULL) *addr = a;
+    return read(this, a);
 }
 
 // 4 cycles, 5 if page crossed
