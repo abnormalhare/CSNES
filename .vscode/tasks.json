@@ -13,6 +13,8 @@
                 "src/opcodes.c",
                 "src/opfuncs.c",
                 "src/rw.c",
+                "src/mapper.c",
+                "src/ppu.c",
                 "-O2",
                 "-Iinclude",
                 "-lmingw32",

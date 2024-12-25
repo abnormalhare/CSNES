@@ -11,6 +11,10 @@
         "limits": "c",
         "__config": "c",
         "compare": "c",
-        "cstddef": "c"
+        "cstddef": "c",
+        "bitset": "c",
+        "string_view": "c",
+        "__locale": "c",
+        "string": "c"
     }
 }

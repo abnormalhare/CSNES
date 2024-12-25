@@ -9,6 +9,7 @@ uint8_t* chrNVRAM = NULL;
 char* fileName;
 
 int8_t special_plp;
+int debugLength = 0;
 
 const opcodeFunc opTable[] = {
     OP_00, OP_01, OP_STP, OP_03, OP_04, OP_05, OP_06, OP_07, OP_08, OP_09, OP_0A, OP_0B, OP_0C, OP_0D, OP_0E, OP_0F,
@@ -36,6 +37,27 @@ NES* newNES(void) {
     nes->pc = 0xFFFC;
 
     return nes;
+}
+
+void NESLoadRegs(NES* this) {
+    this->a = 0;
+    this->x = 0;
+    this->y = 0;
+
+    this->pc = 0xC000;
+    this->sp = 0xFD;
+    this->p.flags = 0b00100100;
+
+    strnset(this->RAM, 0, 0x800);
+    strnset(this->SRAM, 0, 0x2000);
+
+    this->ppu.PPUCTRL = 0;
+    this->ppu.PPUMASK = 0;
+    this->ppu.PPUSTATUS = 0;
+    this->ppu.OAMADDR = 0;
+    this->ppu.isEvenFrame = 0;
+    this->ppu.scanline = 0;
+    this->ppu.dot = 0;
 }
 
 void NESLoadHeader(NES* this, uint8_t header[]) {
@@ -164,19 +186,7 @@ void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
     uint8_t header[0x10];
     uint8_t* fullFile;
 
-    this->a = 0;
-    this->x = 0;
-    this->y = 0;
-
-    this->pc = 0xC000;
-    this->sp = 0xFF;
-    this->p.flags = 0;
-    this->p.intd = 1;
-
-    this->PPURegs.PPUCTRL = 0;
-    this->PPURegs.PPUMASK = 0;
-    this->PPURegs.PPUSTATUS = 0;
-    this->PPURegs.OAMADDR = 0;
+    NESLoadRegs(this);
 
     fread(header, sizeof(uint8_t), 0x10, file);
 
@@ -221,16 +231,45 @@ void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize) {
     this->jam = 0;
 }
 
-void Cycle(NES* this) {
-    uint32_t cycleCount;
+FILE* dbgOutput;
 
-    printf("\n%X: ", this->pc);
+void debugPrint(NES* this) {
+    char debugStr[50] = "      ";
+    switch (debugLength) {
+        case 1:
+            fwrite(debugStr, sizeof(char), 6, dbgOutput);
+            break;
+        case 2:
+            fwrite(debugStr, sizeof(char), 3, dbgOutput);
+            break;
+        default:
+            break;
+    }
+    debugLength = 0;
+    sprintf(debugStr, "  A:%02X X:%02X Y:%02X  P:%02X SP:%02X  ZERO:%02X%02X%02X%02X%02X%02X%02X%02X",
+        this->a, this->x, this->y, this->p.flags, this->sp,
+        this->RAM[0], this->RAM[1], this->RAM[2], this->RAM[3],
+        this->RAM[4], this->RAM[5], this->RAM[6], this->RAM[7]
+    );
+    fwrite(debugStr, sizeof(char), 49, dbgOutput);
+}
+
+void Cycle(NES* this) {
+    char debugStr[8];
+
+    sprintf(debugStr, "\n%04X: ", this->pc);
+    fwrite(debugStr, sizeof(char), 7, dbgOutput);
     opTable[getVal(this)](this);
+    // debugPrint(this);
 }
 
 void CyclePLP(NES* this) {
-    printf("\n%X: ", this->pc);
+    char debugStr[8];
+    sprintf(debugStr, "\n%04X: ", this->pc);
+    fwrite(debugStr, sizeof(char), 7, dbgOutput);
+
     opTable[getVal(this)](this);
+    // debugPrint(this);
 
     this->p.intd = special_plp;
     this->cycleFunc = Cycle;

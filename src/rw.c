@@ -8,23 +8,17 @@ void write(NES* this, uint16_t addr, uint8_t byte) {
     } else if (addr < 0x4000) {
         pos = (addr - 0x2000) % 8;
         switch (pos) {
-            case 0: this->PPURegs.PPUCTRL   = byte; break;
-            case 1: this->PPURegs.PPUMASK   = byte; break;
-            case 3: this->PPURegs.OAMADDR   = byte; break;
-            case 4: this->PPURegs.OAMDATA   = byte; break;
-            case 5: this->PPURegs.PPUSCROLL = byte; break;
-            case 6: this->PPURegs.PPUADDR   = byte; break;
-            case 7: this->PPURegs.PPUDATA   = byte; break;
+            case 2: break;
+            case 0: this->ppu.PPUCTRL   = byte; break;
+            case 1: this->ppu.PPUMASK   = byte; break;
+            case 3: this->ppu.OAMADDR   = byte; break;
+            case 4: this->ppu.OAMDATA   = byte; break;
+            case 5: this->ppu.PPUSCROLL = byte; break;
+            case 6: this->ppu.PPUADDR   = byte; break;
+            case 7: this->ppu.PPUDATA   = byte; break;
         }
     } else if (addr < 0x8000) {
 
-    } else {
-        pos = (addr - 0x8000);
-        if (this->header.prgrom_size == 1) { // temporary NROM case
-            pos %= 0x4000;
-        }
-
-        this->PRGROM[pos] = byte;
     }
 
     PPUCycle(this);
@@ -43,9 +37,9 @@ uint8_t read(NES* this, uint16_t addr) {
     } else if (addr < 0x4000) {
         pos = (addr - 0x2000) % 8;
         switch (pos) {
-            case 2: byte = this->PPURegs.PPUSTATUS; break;
-            case 4: byte = this->PPURegs.OAMDATA;   break;
-            case 7: byte = this->PPURegs.PPUDATA;   break;
+            case 2: byte = this->ppu.PPUSTATUS; break;
+            case 4: byte = this->ppu.OAMDATA;   break;
+            case 7: byte = this->ppu.PPUDATA;   break;
             default:
                 printf("ERROR: read on non-readable PPU instruction (temporary)");
                 exit(EXIT_FAILURE);
@@ -67,8 +61,11 @@ uint8_t read(NES* this, uint16_t addr) {
 
 // 1 cycle
 uint8_t getVal(NES* this) {
+    char debugStr[4];
     uint8_t val = read(this, this->pc++);
-    printf("%02X ", val);
+    sprintf(debugStr, "%02X ", val);
+    fwrite(debugStr, sizeof(char), 3, dbgOutput);
+    debugLength++;
     return val;
 }
 
@@ -85,36 +82,48 @@ void setupPC(NES* this) {
 }
 
 void push(NES* this, uint8_t byte) {
-    write(this, this->sp--, byte);
+    write(this, 0x100 + this->sp--, byte);
 }
 
 // 1 cycle
 uint8_t pop(NES* this, uint16_t* addr) {
     if (addr != NULL) *addr = this->sp;
-    return read(this, this->sp++);
+    return read(this, 0x100 + this->sp++);
 }
 
 uint8_t index_z(NES* this, uint8_t byte, uint16_t* addr) {
-    *addr = byte;
-    return read(this, *addr);
+    uint8_t a = byte;
+    if (addr != NULL) {
+        *addr = a;
+    }
+    return read(this, a);
 }
 
 // 1 cycle
 uint8_t index_zx(NES* this, uint8_t byte, uint16_t* addr) {
-    *addr = (uint8_t)(this->x + byte);
-    return read(this, *addr);
+    uint8_t a = (uint8_t)(this->x + byte);
+    if (addr != NULL) {
+        *addr = a;
+    }
+    return read(this, a);
 }
 
 // 1 cycle
 uint8_t index_zy(NES* this, uint8_t byte, uint16_t* addr) {
-    *addr = (uint8_t)(this->y + byte);
-    return read(this, *addr);
+    uint8_t a = (uint8_t)(this->y + byte);
+    if (addr != NULL) {
+        *addr = a;
+    }
+    return read(this, a);
 }
 
 // 1 cycle
 uint8_t index_a(NES* this, uint16_t byte, uint16_t* addr) {
-    *addr = byte;
-    return read(this, *addr);
+    uint16_t a = byte;
+    if (addr != NULL) {
+        *addr = a;
+    }
+    return read(this, a);
 }
 
 // 1 cycle, 2 if page crossed
@@ -178,7 +187,7 @@ uint8_t index_dy(NES* this, uint8_t byte, uint16_t* addr) {
 
     if (addr != NULL) {
         read(this, (uint8_t)(al + this->y) + (ah << 8));
-        *addr = al + (ah << 8);
+        *addr = (al + this->y) + (ah << 8);
         val = read(this, *addr);
     } else {
         uint16_t falAddr = (uint8_t)(al + this->y) + (ah << 8);

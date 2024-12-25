@@ -123,22 +123,22 @@ void OP_ORA(NES* this, uint8_t mem) {
 
 void OP_ROL(NES* this, uint8_t* mem) {
     uint8_t carry = (*mem > 0x7F);
-    this->p.carry = carry;
 
     *mem <<= 1;
-    *mem |= carry;
+    *mem |= this->p.carry;
 
+    this->p.carry = carry;
     this->p.zero  = (*mem == 0);
     this->p.neg   = (*mem > 0x7F);
 }
 
 void OP_ROR(NES* this, uint8_t* mem) {
     uint8_t carry = (*mem & 1);
-    this->p.carry = carry;
 
     *mem >>= 1;
-    *mem |= carry << 7;
+    *mem |= this->p.carry << 7;
 
+    this->p.carry = carry;
     this->p.zero  = (*mem == 0);
     this->p.neg   = (*mem > 0x7F);
 }

@@ -5,9 +5,9 @@
 #include <malloc.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 
 #include "cycle.h"
-#include "mapper.h"
 
 typedef struct _status {
     union {
@@ -97,7 +97,26 @@ typedef struct _header {
     uint8_t reserved5 : 2;
 } Header;
 
-typedef struct _ppuregs {
+typedef struct _color {
+    uint8_t v : 6;
+} Color;
+typedef struct _dot {
+    uint8_t pallete : 6;
+    uint8_t emphesis : 3;
+} Dot;
+
+typedef struct _ppu {
+    uint8_t* patternTbls;
+
+    uint8_t nameTbl[0x1000];
+    Color pal[32];
+
+    uint8_t OAM[0x40][4];
+
+    Dot screen[262 * 341];
+    int scanline;
+    int dot;
+    
     uint8_t PPUCTRL;
     uint8_t PPUMASK;
     uint8_t PPUSTATUS;
@@ -106,25 +125,8 @@ typedef struct _ppuregs {
     uint8_t PPUSCROLL;
     uint8_t PPUADDR;
     uint8_t PPUDATA;
-} PpuRegs;
-
-typedef struct _ppu {
-    uint8_t patTbl0[0x1000];
-    uint8_t patTbl1[0x1000];
-
-    uint8_t namTbl0[0x3C0];
-    uint8_t attrTbl0[0x40];
-    uint8_t namTbl1[0x3C0];
-    uint8_t attrTbl1[0x40];
-    uint8_t namTbl2[0x3C0];
-    uint8_t attrTbl2[0x40];
-    uint8_t namTbl3[0x3C0];
-    uint8_t attrTbl3[0x40];
-
-    uint8_t imgPal[0x10];
-    uint8_t sprPal[0x10];
-
     
+    uint8_t isEvenFrame : 1;
 } PPU;
 
 typedef struct _NES {
@@ -139,9 +141,8 @@ typedef struct _NES {
     Header header;
 
     uint8_t RAM[0x800];
-    PpuRegs PPURegs;
     uint8_t SRAM[0x2000];
-    uint8_t PRGROM[0x8000];
+    uint8_t* PRGROM;
 
     PPU ppu;
 
@@ -153,6 +154,7 @@ typedef struct _NES {
 typedef void (*opcodeFunc)(NES*);
 
 #include "opcodes.h"
+#include "mapper.h"
 
 extern uint8_t* prgROM;
 extern uint8_t* chrROM;
@@ -161,6 +163,8 @@ extern uint8_t* prgNVRAM;
 extern uint8_t* chrRAM;
 extern uint8_t* chrNVRAM;
 extern char* fileName;
+extern int debugLength;
+extern FILE* dbgOutput;
 
 NES* newNES(void);
 void NESLoadROM(NES* this, FILE* file, char const* filename, size_t filesize);

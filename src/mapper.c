@@ -11,22 +11,17 @@ void NROMSetup(NES* this, uint8_t* bytes) {
         }
     }
 
-    if (this->header.prgrom_size == 1) {
-        for (i = 0; i < 0x4000; i++, fAddr++) {
-            prgROM[i] = this->PRGROM[i] = bytes[fAddr];
-        }
-    } else {
-        for (i = 0; i < 0x8000; i++, fAddr++) {
-            prgROM[i] = this->PRGROM[i] = bytes[fAddr];
-        }
-        for (; i < (this->header.prgrom_size - 2) * 0x4000; i++, fAddr++) {
-            prgROM[i] = bytes[fAddr];
-        }
+    for (i = 0; i < this->header.prgrom_size * 0x4000; i++, fAddr++) {
+        prgROM[i] = bytes[fAddr];
     }
+
+    this->PRGROM = prgROM; // set the pointer to prgROM (bank switching, essentially)
 
     for (i = 0; i < this->header.chrrom_size * 0x2000; i++, fAddr++) {
         chrROM[i] = bytes[fAddr];
     }
+
+    this->ppu.patternTbls = chrROM;
 }
 
 void determineMapper(NES* this, uint8_t* bytes) {
