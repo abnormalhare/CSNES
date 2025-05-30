@@ -4,15 +4,30 @@ pub fn STP(this: *NES, code: u8) void {
     this.jam = code;
 }
 
-// accumulator / implied addressing
+pub fn BRK(this: *NES, brk: u1) void {
+    switch (this.timing) {
+        else => this.resetTiming(),
+        1 => this.R_readROM(),
+        2 => { this.W_push(@truncate(this.pc >> 0)); this.p.flags.brk = brk; },
+        3 => this.W_push(@truncate(this.pc >> 8)),
+        4 => this.W_push(this.p.all),
+        5 => this.R_setPCIndirect(0xFFFE, 0),
+        6 => this.R_setPCIndirect(0xFFFF, 1),
+    }
+}
+
+/// accumulator / implied addressing
 pub fn I(this: *NES) void {
+    if (this.timing == 1) {
+        this.checkIRQ();
+    }
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_getROM(this.pc),
     }
 }
 
-// immediate addressing
+/// immediate addressing
 pub fn M(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -20,7 +35,7 @@ pub fn M(this: *NES) void {
     }
 }
 
-// absolute addressing, read
+/// absolute addressing, read
 pub fn A_R(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -30,7 +45,7 @@ pub fn A_R(this: *NES) void {
     }
 }
 
-// absolute addressing, rmw
+/// absolute addressing, rmw
 pub fn A_M(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -42,17 +57,18 @@ pub fn A_M(this: *NES) void {
     }
 }
 
-// absolute addressing, write
-// NOTE: you must write manually
+/// absolute addressing, write
+/// NOTE: you must write manually
 pub fn A_W(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
         2 => { this.R_readROM(); this.setAB(this.data, 1); },
+        3 => {},
     }
 }
 
-// zero page addressing, read
+/// zero page addressing, read
 pub fn D_R(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -61,7 +77,7 @@ pub fn D_R(this: *NES) void {
     }
 }
 
-// zero page addressing, rmw
+/// zero page addressing, rmw
 pub fn D_M(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -72,8 +88,8 @@ pub fn D_M(this: *NES) void {
     }
 }
 
-// zero page addressing, write
-// NOTE: you must write manually
+/// zero page addressing, write
+/// NOTE: you must write manually
 pub fn D_W(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -82,7 +98,7 @@ pub fn D_W(this: *NES) void {
     }
 }
 
-// zero page indexed addressing, read
+/// zero page indexed addressing, read
 pub fn DX_R(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -92,7 +108,7 @@ pub fn DX_R(this: *NES) void {
     }
 }
 
-// zero page indexed addressing, rmw
+/// zero page indexed addressing, rmw
 pub fn DX_M(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -104,8 +120,8 @@ pub fn DX_M(this: *NES) void {
     }
 }
 
-// zero page indexed addressing, write
-// NOTE: you must write manually
+/// zero page indexed addressing, write
+/// NOTE: you must write manually
 pub fn DX_W(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -115,7 +131,7 @@ pub fn DX_W(this: *NES) void {
     }
 }
 
-// absolute indexed x addressing, read
+/// absolute indexed x addressing, read
 pub fn AX_R(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -134,7 +150,7 @@ pub fn AX_R(this: *NES) void {
     }
 }
 
-// absolute indexed x addressing, rmw
+/// absolute indexed x addressing, rmw
 pub fn AX_M(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -147,18 +163,19 @@ pub fn AX_M(this: *NES) void {
     }
 }
 
-// absolute indexed x addressing, write
-// NOTE: you must write manually
+/// absolute indexed x addressing, write
+/// NOTE: you must write manually
 pub fn AX_W(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
         2 => { this.R_readROM(); this.setAB(this.data, 1); this.ABAdd(this.x, 0); },
         3 => { this.R_getROMWithAB(); this.ABAdd(this.x, 1); },
+        4 => {},
     }
 }
 
-// absolute indexed y addressing, read
+/// absolute indexed y addressing, read
 pub fn AY_R(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -177,7 +194,7 @@ pub fn AY_R(this: *NES) void {
     }
 }
 
-// absolute indexed y addressing, rmw
+/// absolute indexed y addressing, rmw
 pub fn AY_M(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -190,18 +207,19 @@ pub fn AY_M(this: *NES) void {
     }
 }
 
-// absolute indexed y addressing, write
-// NOTE: you must write manually
+/// absolute indexed y addressing, write
+/// NOTE: you must write manually
 pub fn AY_W(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
         2 => { this.R_readROM(); this.setAB(this.data, 1); this.ABAdd(this.y, 0); },
         3 => { this.R_getROMWithAB(); this.ABAdd(this.y, 1); },
+        4 => {},
     }
 }
 
-// relative addressing (branches)
+/// relative addressing (branches)
 pub fn RA(this: *NES, check: bool) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -215,19 +233,19 @@ pub fn RA(this: *NES, check: bool) void {
             
             const pc_lo: u8 = @truncate(this.pc);
             const addr_lo: u8, this.add.flags.carry = @addWithOverflow(pc_lo, this.data);
-            this.setPC(addr_lo, 0);
+            this.setPC(addr_lo, 1);
             
             if (this.add.flags.carry == 0) { this.timing = 0xF; }
         },
         3 => {
             this.R_getROM(this.pc);
             
-            this.setPC(@truncate((this.pc >> 8) + this.add.flags.carry), 1);
+            this.setPC(@truncate((this.pc >> 8) + this.add.flags.carry), 0);
         },
     }
 }
 
-// indexed indirect addressing, read
+/// indexed indirect addressing, read
 pub fn IX_R(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -239,7 +257,7 @@ pub fn IX_R(this: *NES) void {
     }
 }
 
-// indexed indirect addressing, rmw
+/// indexed indirect addressing, rmw
 pub fn IX_M(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -253,19 +271,20 @@ pub fn IX_M(this: *NES) void {
     }
 }
 
-// indexed indirect addressing, write
-// NOTE: you must write manually
+/// indexed indirect addressing, write
+/// NOTE: you must write manually
 pub fn IX_W(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
         2 => { this.R_getROMWithD(); this.addData(this.x); },
         3 => { this.R_setABIndirect(@intCast(this.data), 0); this.addData(1); },
-        4 => { this.R_getROMWithAB(); this.R_setABIndirect(@intCast(this.data), 1); }
+        4 => { this.R_getROMWithAB(); this.R_setABIndirect(@intCast(this.data), 1); },
+        5 => {},
     }
 }
 
-// indirect indexed addressing, read
+/// indirect indexed addressing, read
 pub fn IY_R(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -285,7 +304,7 @@ pub fn IY_R(this: *NES) void {
     }
 }
 
-// indirect indexed addressing, rmw
+/// indirect indexed addressing, rmw
 pub fn IY_M(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -299,8 +318,8 @@ pub fn IY_M(this: *NES) void {
     }
 }
 
-// indirect indexed addressing, write
-// NOTE: you must write manually
+/// indirect indexed addressing, write
+/// NOTE: you must write manually
 pub fn IY_W(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
@@ -308,5 +327,6 @@ pub fn IY_W(this: *NES) void {
         2 => { this.R_setABIndirect(@intCast(this.data), 0); this.addData(1); },
         3 => { this.R_setABIndirect(@intCast(this.data), 1); this.ABAdd(this.y, 0); },
         4 => { this.R_getROMWithAB(); this.ABAdd(this.y, 1); },
+        5 => {},
     }
 }

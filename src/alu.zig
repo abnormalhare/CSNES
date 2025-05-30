@@ -49,6 +49,20 @@ pub fn LDA(this: *NES) void {
     this.p.flags.neg  = @intFromBool(this.a >= 0x80);
 }
 
+pub fn LDX(this: *NES) void {
+    this.x = this.data;
+
+    this.p.flags.zero = @intFromBool(this.x == 0x00);
+    this.p.flags.neg  = @intFromBool(this.x >= 0x80);
+}
+
+pub fn LDY(this: *NES) void {
+    this.y = this.data;
+
+    this.p.flags.zero = @intFromBool(this.y == 0x00);
+    this.p.flags.neg  = @intFromBool(this.y >= 0x80);
+}
+
 pub fn LSR(this: *NES) void {
     const c: u1 = @intCast(this.a & 1);
     this.data >>= 1;

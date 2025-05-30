@@ -3,6 +3,7 @@ const alloc = @import("global").alloc;
 
 const def = @import("defines.zig");
 const mapper = @import("mapper.zig");
+const OPTYPE = @import("opcode_types.zig");
 
 const read = @import("rw.zig").read;
 const write = @import("rw.zig").write;
@@ -18,6 +19,7 @@ pub const NES = struct {
     pc: u16, sp: u8,
     data: u8,
     p: def.Status,
+    setI: bool,
 
     // internal logic
     ir: u8,
@@ -31,6 +33,9 @@ pub const NES = struct {
     RAM: [0x800]u8,
     SRAM: [0x2000]u8,
     ppu: def.PPU,
+
+    // External Pins
+    irq: u1,
 
     // emulation information
     cycleCount: u64,
@@ -50,6 +55,7 @@ pub const NES = struct {
         this.timing = 0;
         
         this.p.all = 0b00100100;
+        this.setI = false;
 
         this.RAM = [_]u8{0} ** 0x800;
         this.SRAM = [_]u8{0} ** 0x2000;
@@ -115,27 +121,41 @@ pub const NES = struct {
     pub fn run(this: *NES) void {
         switch (this.timing) {
             0 => {
+                std.debug.print("\n PC: {X:0>2} | ", .{this.pc});
                 this.ab.full = this.pc;
+                this.pc += 1;
                 this.R_getROMWithAB();
+                this.prtOp();
                 this.ir = this.data;
-                std.debug.print("\n", .{});
             },
             else => {
+                if (this.p.flags.intd) {
+                    opTable[0x00](this);
+                    return;
+                }
+
                 opTable[this.ir](this);
+                
                 if (this.timing == 0) this.run();
             }
         }
     }
 
+    fn prtOp(this: *NES) void {
+        std.debug.print("0x{X:0>2} ", .{this.data});
+    }
+
     pub fn resetTiming(this: *NES) void {
         this.timing = 0;
-        this.pc += 1;
+    }
+
+    pub fn checkIRQ(this: *NES) void {
+        this.p.flags.intd = this.setI;
     }
 
     // R/W WRAPPER FUNCTIONS //
     pub fn R_getROM(this: *NES, index: u16) void {
         this.data = read(this, index);
-        std.debug.print("0x{X} ", .{this.data});
     }
 
     pub fn R_getOpcode(this: *NES, index: u16) void {
@@ -146,6 +166,7 @@ pub const NES = struct {
     pub fn R_readROM(this: *NES) void {
         this.R_getROM(this.pc);
         this.pc, _ = @addWithOverflow(this.pc, 1);
+        this.prtOp();
     }
 
     pub fn R_readOpcode(this: *NES) void {
@@ -187,10 +208,10 @@ pub const NES = struct {
     pub fn setPC(this: *NES, data: u8, stage: u1) void {
         switch (stage) {
             0 => {
-                this.pcs.half.low = data;
+                this.pcs.half.high = data;
             },
             1 => {
-                this.pcs.half.high = data;
+                this.pcs.half.low = data;
                 this.pc = this.pcs.full;
             }
         }
@@ -199,10 +220,10 @@ pub const NES = struct {
     pub fn setAB(this: *NES, data: u8, stage: u1) void {
         switch (stage) {
             0 => {
-                this.ab.half.low = data;
+                this.ab.half.high = data;
             },
             1 => {
-                this.ab.half.high = data;
+                this.ab.half.low = data;
             }
         }
     }
