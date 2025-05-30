@@ -641,6 +641,7 @@ pub fn OP_45(this: *NES) void {
     }
 }
 
+/// [M] LSR d
 pub fn OP_46(this: *NES) void {
     OPTYPE.D_M(this);
     switch (this.timing) {
@@ -649,12 +650,33 @@ pub fn OP_46(this: *NES) void {
     }
 }
 
-pub const opTable: [0x43]*const fn(*NES) void = .{
+/// [M] SRE d
+pub fn OP_47(this: *NES) void {
+    OPTYPE.D_M(this);
+    switch (this.timing) {
+        else => {},
+        3 => {
+            ALU.LSR(this);
+            ALU.EOR(this);
+        },
+    }
+}
+
+/// PHA
+pub fn OP_48(this: *NES) void {
+    OPTYPE.I(this);
+    switch (this.timing) {
+        else => {},
+        1 => this.W_push(this.a),
+    }
+}
+
+pub const opTable = [_]*const fn(*NES) void{
     OP_00, OP_01, OP_02, OP_03, OP_04, OP_05, OP_06, OP_07, OP_08, OP_09, OP_0A, OP_0B, OP_0C, OP_0D, OP_0E, OP_0F,
     OP_10, OP_11, OP_12, OP_13, OP_14, OP_15, OP_16, OP_17, OP_18, OP_19, OP_1A, OP_1B, OP_1C, OP_1D, OP_1E, OP_1F,
     OP_20, OP_21, OP_22, OP_23, OP_24, OP_25, OP_26, OP_27, OP_28, OP_29, OP_2A, OP_2B, OP_2C, OP_2D, OP_2E, OP_2F,
     OP_30, OP_31, OP_32, OP_33, OP_34, OP_35, OP_36, OP_37, OP_38, OP_39, OP_3A, OP_3B, OP_3C, OP_3D, OP_3E, OP_3F,
-    OP_40, OP_41, OP_42, //OP_43, OP_44, OP_45, OP_46, OP_47, OP_48, OP_49, OP_4A, OP_4B, OP_4C, OP_4D, OP_4E, OP_4F,
+    OP_40, OP_41, OP_42, OP_43, OP_44, OP_45, OP_46, OP_47, OP_48, //OP_49, OP_4A, OP_4B, OP_4C, OP_4D, OP_4E, OP_4F,
     //OP_50, OP_51, OP_52, OP_53, OP_54, OP_55, OP_56, OP_57, OP_58, OP_59, OP_5A, OP_5B, OP_5C, OP_5D, OP_5E, OP_5F,
     //OP_60, OP_61, OP_62, OP_63, OP_64, OP_65, OP_66, OP_67, OP_68, OP_69, OP_6A, OP_6B, OP_6C, OP_6D, OP_6E, OP_6F,
     //OP_70, OP_71, OP_72, OP_73, OP_74, OP_75, OP_76, OP_77, OP_78, OP_79, OP_7A, OP_7B, OP_7C, OP_7D, OP_7E, OP_7F,

@@ -91,3 +91,13 @@ pub const addr_bus = extern union {
         low: u8,
     },
 };
+
+pub var mapper: u8 = undefined;
+pub var header: Header = undefined;
+pub var trainer: []u8 = undefined;
+pub var prgROM: []u8 = undefined;
+pub var chrROM: []u8 = undefined;
+pub var prgRAM: []u8 = undefined;
+pub var chrRAM: []u8 = undefined;
+pub var prgNVRAM: []u8 = undefined;
+pub var chrNVRAM: []u8 = undefined;

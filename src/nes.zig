@@ -42,7 +42,7 @@ pub const NES = struct {
         this.x = 0;
         this.y = 0;
 
-        this.pc = 0xFFFC;
+        this.pc = 0xC000; // 0xFFFC;
         this.ab.full = this.pc;
         this.sp = 0xFD;
 
@@ -115,11 +115,10 @@ pub const NES = struct {
     pub fn run(this: *NES) void {
         switch (this.timing) {
             0 => {
-                this.pc += 1;
                 this.ab.full = this.pc;
                 this.R_getROMWithAB();
                 this.ir = this.data;
-                std.debug.print("0x{X}\n", .{this.ir});
+                std.debug.print("\n", .{});
             },
             else => {
                 opTable[this.ir](this);
@@ -130,11 +129,13 @@ pub const NES = struct {
 
     pub fn resetTiming(this: *NES) void {
         this.timing = 0;
+        this.pc += 1;
     }
 
     // R/W WRAPPER FUNCTIONS //
     pub fn R_getROM(this: *NES, index: u16) void {
         this.data = read(this, index);
+        std.debug.print("0x{X} ", .{this.data});
     }
 
     pub fn R_getOpcode(this: *NES, index: u16) void {

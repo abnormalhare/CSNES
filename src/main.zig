@@ -98,6 +98,7 @@ pub fn main() !void {
         if (currTime - lastTime >= 560) {
             nes.run();
             lastTime = currTime;
+            nes.timing += 1;
 
             const screen: *const u8 = try convertToRGBA(nes.ppu.screen);
             updateSDL(screen, videoPitch);
