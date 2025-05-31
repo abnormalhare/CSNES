@@ -131,6 +131,39 @@ pub fn DX_W(this: *NES) void {
     }
 }
 
+/// zero page indexed addressing, read
+pub fn DY_R(this: *NES) void {
+    switch (this.timing) {
+        else => this.resetTiming(),
+        1 => this.R_readROM(),
+        2 => { this.R_getROMWithD(); this.addData(this.y); },
+        3 => this.R_getROMWithD(),
+    }
+}
+
+/// zero page indexed addressing, rmw
+pub fn DY_M(this: *NES) void {
+    switch (this.timing) {
+        else => this.resetTiming(),
+        1 => this.R_readROM(),
+        2 => { this.R_getROMWithD(); this.addData(this.y); },
+        3 => this.R_getROMWithD(),
+        4 => this.W_writeROM(),
+        5 => this.W_writeROM(),
+    }
+}
+
+/// zero page indexed addressing, write
+/// NOTE: you must write manually
+pub fn DY_W(this: *NES) void {
+    switch (this.timing) {
+        else => this.resetTiming(),
+        1 => this.R_readROM(),
+        2 => { this.R_getROMWithD(); this.addData(this.y); },
+        3 => this.setAB(this.data, 0),
+    }
+}
+
 /// absolute indexed x addressing, read
 pub fn AX_R(this: *NES) void {
     switch (this.timing) {

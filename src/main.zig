@@ -68,7 +68,7 @@ fn convertToRGBA(ppuScreen: [def.SCREEN_HEIGHT * def.SCREEN_WIDTH]def.Dot) !*u8 
 }
 
 pub fn main() !void {
-    const videoPitch: i32 = @sizeOf(u8) * def.SCREEN_WIDTH;
+    // const videoPitch: i32 = @sizeOf(u8) * def.SCREEN_WIDTH;
     var args = try std.process.argsWithAllocator(alloc);
     defer args.deinit();
 
@@ -92,6 +92,7 @@ pub fn main() !void {
     }
     var lastTime: i128 = std.time.nanoTimestamp();
 
+    // nes.startPC();
     while (nes.jam == 0) {
         const currTime: i128 = std.time.nanoTimestamp();
         
@@ -100,8 +101,8 @@ pub fn main() !void {
             lastTime = currTime;
             nes.timing += 1;
 
-            const screen: *const u8 = try convertToRGBA(nes.ppu.screen);
-            updateSDL(screen, videoPitch);
+            // const screen: *const u8 = try convertToRGBA(nes.ppu.screen);
+            // updateSDL(screen, videoPitch);
         }
     }
     std.debug.print("[ ERROR: NES jammed: 0x{X} ]", .{nes.jam});

@@ -50,7 +50,7 @@ pub const NES = struct {
         this.x = 0;
         this.y = 0;
 
-        this.pc = 0xC000; // 0xFFFC;
+        this.pc = 0xC000;
         this.ab.full = this.pc;
         this.sp = 0xFD;
 
@@ -131,9 +131,15 @@ pub const NES = struct {
             3 => "  ",
         };
         std.debug.print("{s}| A:{X:0>2} X:{X:0>2} Y:{X:0>2} P:{X:0>2} | ", .{str, this.a, this.x, this.y, this.p.all});
-        std.debug.print("ST:{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}\n PC: {X:0>2} | ", 
-        .{this.RAM[0x1FF], this.RAM[0x1FE], this.RAM[0x1FD], this.RAM[0x1FC], this.RAM[0x1FB], this.RAM[0x1FA], this.RAM[0x1F9], this.RAM[0x1F8], this.pc});
+
+        const sp: u16 = @as(u16, this.sp) + 0x100;
+        std.debug.print("ST:{X:0>2} {X:0>2} {X:0>2} {X:0>2} | RAM:{X:0>2} {X:0>2} {X:0>2} {X:0>2}\n PC: {X:0>2} | ", 
+        .{this.RAM[sp - 2], this.RAM[sp - 1], this.RAM[sp], this.RAM[sp + 1], this.RAM[0], this.RAM[0x1], this.RAM[2], this.RAM[3], this.pc});
         this.cnt = 0;
+    }
+
+    pub fn startPC(this: *NES) void {
+        this.pc = @as(u16, read(this, this.pc)) + (@as(u16, read(this, this.pc + 1)) << 8);
     }
 
     pub fn run(this: *NES) void {

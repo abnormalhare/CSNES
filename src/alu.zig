@@ -2,10 +2,10 @@ const NES = @import("nes.zig").NES;
 
 pub fn ADC(this: *NES) void {
     const a: u8 = this.a;
-    this.a, const c: u1 = @addWithOverflow(this.a, this.data);
-    this.a += this.p.flags.carry;
+    this.a, const c1: u1 = @addWithOverflow(this.a, this.data);
+    this.a, const c2: u1 = @addWithOverflow(this.a, this.p.flags.carry);
 
-    this.p.flags.carry = c;
+    this.p.flags.carry = c1 | c2;
     this.p.flags.zero = @intFromBool(this.a == 0x00);
     this.p.flags.over = @intFromBool(((this.a ^ a) & (this.a ^ this.data) & 0x80) == 0x80);
     this.p.flags.neg  = @intFromBool(this.a >= 0x80);
@@ -38,12 +38,27 @@ pub fn ASLA(this: *NES) void {
     this.p.flags.neg  = @intFromBool(this.a >= 0x80);
 }
 
+pub fn BIT(this: *NES) void {
+    const bit: u8 = this.a & this.data;
+
+    this.p.flags.zero = @intFromBool(bit == 0x00);
+    this.p.flags.over = @intFromBool((this.data & 0x40) == 0x40);
+    this.p.flags.neg  = @intFromBool(this.data >= 0x80);
+}
+
 pub fn CMP(this: *NES) void {
-    const res: u8 = this.a - this.data;
+    const res: u8, _ = @subWithOverflow(this.a, this.data);
 
     this.p.flags.carry = @intFromBool(this.a >= this.data);
     this.p.flags.zero  = @intFromBool(this.a == this.data);
-    this.p.flags.neg   = @intFromBool((res & 0x40) == 0x40);
+    this.p.flags.neg   = @intFromBool(res >= 0x80);
+}
+
+pub fn DEC(this: *NES) void {
+    this.data -= 1;
+
+    this.p.flags.zero = @intFromBool(this.data == 0x00);
+    this.p.flags.neg  = @intFromBool(this.data >= 0x80);
 }
 
 pub fn EOR(this: *NES) void {
@@ -51,14 +66,6 @@ pub fn EOR(this: *NES) void {
 
     this.p.flags.zero = @intFromBool(this.a == 0x00);
     this.p.flags.neg  = @intFromBool(this.a >= 0x80);
-}
-
-pub fn BIT(this: *NES) void {
-    const bit: u8 = this.a & this.data;
-
-    this.p.flags.zero = @intFromBool(bit == 0x00);
-    this.p.flags.over = @intFromBool((bit & 0x40) == 0x40);
-    this.p.flags.neg  = @intFromBool(bit >= 0x80);
 }
 
 pub fn INC(this: *NES) void {
@@ -151,11 +158,11 @@ pub fn ROR(this: *NES) void {
 
 pub fn SBC(this: *NES) void {
     const a: u8 = this.a;
-    const c: u1 = this.p.flags.carry;
     
-    this.a, this.p.flags.carry = @subWithOverflow(this.a, this.data);
-    this.a -= c;
-
+    this.a, const c1: u1 = @subWithOverflow(this.a, this.data);
+    this.a, const c2: u1 = @subWithOverflow(this.a, ~this.p.flags.carry);
+    
+    this.p.flags.carry = c1 | c2;
     this.p.flags.zero = @intFromBool(this.a == 0x00);
     this.p.flags.over = @intFromBool(((this.a ^ a) & (this.a ^ ~this.data) & 0x80) == 0x80);
     this.p.flags.neg  = @intFromBool(this.a >= 0x80);
