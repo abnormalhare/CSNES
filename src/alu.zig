@@ -187,7 +187,7 @@ pub fn SBC(this: *NES) void {
     this.a, const c1: u1 = @subWithOverflow(this.a, this.data);
     this.a, const c2: u1 = @subWithOverflow(this.a, ~this.p.flags.carry);
     
-    this.p.flags.carry = c1 | c2;
+    this.p.flags.carry = ~(c1 | c2);
     this.p.flags.zero = @intFromBool(this.a == 0x00);
     this.p.flags.over = @intFromBool(((this.a ^ a) & (this.a ^ ~this.data) & 0x80) == 0x80);
     this.p.flags.neg  = @intFromBool(this.a >= 0x80);
@@ -223,9 +223,6 @@ pub fn TXA(this: *NES) void {
 
 pub fn TXS(this: *NES) void {
     this.sp = this.x;
-
-    this.p.flags.zero  = @intFromBool(this.sp == 0x00);
-    this.p.flags.neg   = @intFromBool(this.sp >= 0x80);
 }
 
 pub fn TYA(this: *NES) void {

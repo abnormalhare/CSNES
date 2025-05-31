@@ -125,15 +125,15 @@ pub const NES = struct {
 
     fn prtEnd(this: *NES) void {
         const str: []const u8 = switch (this.cnt) {
-            0 => "                 ",
+            0 => "               ",
             1 => "            ",
-            2 => "       ",
-            3 => "  ",
+            2 => "         ",
+            3 => "      ",
         };
         std.debug.print("{s}| A:{X:0>2} X:{X:0>2} Y:{X:0>2} P:{X:0>2} | ", .{str, this.a, this.x, this.y, this.p.all});
 
         const sp: u16 = @as(u16, this.sp) + 0x100;
-        std.debug.print("0x{X:0>2}:{X:0>2} {X:0>2} {X:0>2} {X:0>2} | RAM:{X:0>2} {X:0>2} {X:0>2} {X:0>2}\n PC: {X:0>2} | ", 
+        std.debug.print("0x{X:0>2}:{X:0>2} {X:0>2} {X:0>2} {X:0>2} | RAM:{X:0>2} {X:0>2} {X:0>2} {X:0>2}\n{X:0>2} | ", 
         .{this.sp, this.RAM[sp + 2], this.RAM[sp + 1], this.RAM[sp], this.RAM[sp - 1], this.RAM[0], this.RAM[0x1], this.RAM[2], this.RAM[3], this.pc});
         this.cnt = 0;
     }
@@ -166,7 +166,7 @@ pub const NES = struct {
     }
 
     fn prtOp(this: *NES) void {
-        std.debug.print("0x{X:0>2} ", .{this.data});
+        std.debug.print("{X:0>2} ", .{this.data});
         this.cnt += 1;
     }
 

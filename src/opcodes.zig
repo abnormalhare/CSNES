@@ -1891,8 +1891,8 @@ fn OP_C8(this: *NES) void {
         1 => {
             this.y, _ = @addWithOverflow(this.y, 1);
 
-            this.p.flags.zero = @intFromBool(this.y == 0);
-            this.p.flags.neg  = @intFromBool(this.y >= 0);
+            this.p.flags.zero = @intFromBool(this.y == 0x00);
+            this.p.flags.neg  = @intFromBool(this.y >= 0x80);
         },
     }
 }
@@ -2082,8 +2082,8 @@ fn OP_E8(this: *NES) void {
         1 => {
             this.x, _ = @addWithOverflow(this.x, 1);
 
-            this.p.flags.zero = @intFromBool(this.x == 0);
-            this.p.flags.neg  = @intFromBool(this.x >= 0);
+            this.p.flags.zero = @intFromBool(this.x == 0x00);
+            this.p.flags.neg  = @intFromBool(this.x >= 0x80);
         },
     }
 }
