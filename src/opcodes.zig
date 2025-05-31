@@ -7,7 +7,7 @@ const OPTYPE = @import("opcode_types.zig");
 // NOTE: All timings should have at least ONE call to the R_ or W_ wrappers
 
 /// BRK
-pub fn OP_00(this: *NES) void {
+fn OP_00(this: *NES) void {
     if (this.ir == 0x00) {
         OPTYPE.BRK(this, 1);
     } else {
@@ -16,7 +16,7 @@ pub fn OP_00(this: *NES) void {
 }
 
 /// [R] ORA (d,x)
-pub fn OP_01(this: *NES) void {
+fn OP_01(this: *NES) void {
     OPTYPE.IX_R(this);
     switch (this.timing) {
         else => {},
@@ -25,12 +25,12 @@ pub fn OP_01(this: *NES) void {
 }
 
 /// STP
-pub fn OP_02(this: *NES) void {
+fn OP_02(this: *NES) void {
     OPTYPE.STP(this, 0x02);
 }
 
 /// [M] SLO (d,x)
-pub fn OP_03(this: *NES) void {
+fn OP_03(this: *NES) void {
     OPTYPE.IX_M(this);
     switch (this.timing) {
         else => {},
@@ -42,12 +42,12 @@ pub fn OP_03(this: *NES) void {
 }
 
 /// [R] NOP d
-pub fn OP_04(this: *NES) void {
+fn OP_04(this: *NES) void {
     OPTYPE.D_R(this);
 }
 
 /// [R] ORA d
-pub fn OP_05(this: *NES) void {
+fn OP_05(this: *NES) void {
     OPTYPE.D_R(this);
     switch (this.timing) {
         else => {},
@@ -56,7 +56,7 @@ pub fn OP_05(this: *NES) void {
 }
 
 /// [M] ASL d
-pub fn OP_06(this: *NES) void {
+fn OP_06(this: *NES) void {
     OPTYPE.D_M(this);
     switch (this.timing) {
         else => {},
@@ -65,7 +65,7 @@ pub fn OP_06(this: *NES) void {
 }
 
 /// [M] SLO d
-pub fn OP_07(this: *NES) void {
+fn OP_07(this: *NES) void {
     OPTYPE.D_M(this);
     switch (this.timing) {
         else => {},
@@ -77,16 +77,17 @@ pub fn OP_07(this: *NES) void {
 }
 
 /// PHP
-pub fn OP_08(this: *NES) void {
+fn OP_08(this: *NES) void {
+    this.checkIRQ(2);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => this.R_getROM(this.pc),
+        1 => this.R_getROMWithPC(),
         2 => { this.W_push(this.p.all | 0x30); },
     }
 }
 
 /// [R] ORA #i
-pub fn OP_09(this: *NES) void {
+fn OP_09(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
@@ -95,7 +96,7 @@ pub fn OP_09(this: *NES) void {
 }
 
 /// [M] ASL
-pub fn OP_0A(this: *NES) void {
+fn OP_0A(this: *NES) void {
     OPTYPE.I(this);
     switch (this.timing) {
         else => {},
@@ -104,7 +105,7 @@ pub fn OP_0A(this: *NES) void {
 }
 
 /// [R] ANC #i
-pub fn OP_0B(this: *NES) void {
+fn OP_0B(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
@@ -116,12 +117,12 @@ pub fn OP_0B(this: *NES) void {
 }
 
 /// [R] NOP a
-pub fn OP_0C(this: *NES) void {
+fn OP_0C(this: *NES) void {
     OPTYPE.A_R(this);
 }
 
 /// [R] ORA a
-pub fn OP_0D(this: *NES) void {
+fn OP_0D(this: *NES) void {
     OPTYPE.A_R(this);
     switch (this.timing) {
         else => {},
@@ -130,7 +131,7 @@ pub fn OP_0D(this: *NES) void {
 }
 
 /// [M] ASL a
-pub fn OP_0E(this: *NES) void {
+fn OP_0E(this: *NES) void {
     OPTYPE.A_M(this);
     switch (this.timing) {
         else => {},
@@ -139,7 +140,7 @@ pub fn OP_0E(this: *NES) void {
 }
 
 /// [M] SLO a
-pub fn OP_0F(this: *NES) void {
+fn OP_0F(this: *NES) void {
     OPTYPE.A_M(this);
     switch (this.timing) {
         else => {},
@@ -151,12 +152,12 @@ pub fn OP_0F(this: *NES) void {
 }
 
 /// BPL
-pub fn OP_10(this: *NES) void {
+fn OP_10(this: *NES) void {
     OPTYPE.RA(this, this.p.flags.neg == 0);
 }
 
 /// [R] ORA (d),y
-pub fn OP_11(this: *NES) void {
+fn OP_11(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
@@ -166,12 +167,12 @@ pub fn OP_11(this: *NES) void {
 }
 
 /// STP
-pub fn OP_12(this: *NES) void {
+fn OP_12(this: *NES) void {
     OPTYPE.STP(this, 0x12);
 }
 
 /// [M] SLO (d),y
-pub fn OP_13(this: *NES) void {
+fn OP_13(this: *NES) void {
     OPTYPE.IY_M(this);
     switch (this.timing) {
         else => {},
@@ -183,12 +184,12 @@ pub fn OP_13(this: *NES) void {
 }
 
 /// [R] NOP d,x
-pub fn OP_14(this: *NES) void {
+fn OP_14(this: *NES) void {
     OPTYPE.DX_R(this);
 }
 
 /// [R] ORA d,x
-pub fn OP_15(this: *NES) void {
+fn OP_15(this: *NES) void {
     switch (this.timing) {
         else => {},
         3 => ALU.ORA(this),
@@ -196,7 +197,7 @@ pub fn OP_15(this: *NES) void {
 }
 
 /// [M] ASL d,x
-pub fn OP_16(this: *NES) void {
+fn OP_16(this: *NES) void {
     OPTYPE.DX_M(this);
     switch (this.timing) {
         else => {},
@@ -205,7 +206,7 @@ pub fn OP_16(this: *NES) void {
 }
 
 /// [M] SLO d,x
-pub fn OP_17(this: *NES) void {
+fn OP_17(this: *NES) void {
     OPTYPE.DX_M(this);
     switch (this.timing) {
         else => {},
@@ -217,7 +218,7 @@ pub fn OP_17(this: *NES) void {
 }
 
 /// CLC
-pub fn OP_18(this: *NES) void {
+fn OP_18(this: *NES) void {
     OPTYPE.I(this);
     switch (this.timing) {
         else => {},
@@ -226,7 +227,7 @@ pub fn OP_18(this: *NES) void {
 }
 
 /// [R] ORA a,y
-pub fn OP_19(this: *NES) void {
+fn OP_19(this: *NES) void {
     OPTYPE.AY_R(this);
     switch (this.timing) {
         else => {},
@@ -236,12 +237,12 @@ pub fn OP_19(this: *NES) void {
 }
 
 /// [R] NOP
-pub fn OP_1A(this: *NES) void {
+fn OP_1A(this: *NES) void {
     OPTYPE.I(this);
 }
 
 /// [M] SLO a,y
-pub fn OP_1B(this: *NES) void {
+fn OP_1B(this: *NES) void {
     OPTYPE.AY_M(this);
     switch (this.timing) {
         else => {},
@@ -253,12 +254,12 @@ pub fn OP_1B(this: *NES) void {
 }
 
 /// [R] NOP a,x
-pub fn OP_1C(this: *NES) void {
+fn OP_1C(this: *NES) void {
     OPTYPE.AX_R(this);
 }
 
 /// [R] ORA a,x
-pub fn OP_1D(this: *NES) void {
+fn OP_1D(this: *NES) void {
     OPTYPE.AX_M(this);
     switch (this.timing) {
         else => {},
@@ -268,7 +269,7 @@ pub fn OP_1D(this: *NES) void {
 }
 
 /// [M] ASL a,x
-pub fn OP_1E(this: *NES) void {
+fn OP_1E(this: *NES) void {
     OPTYPE.AX_M(this);
     switch (this.timing) {
         else => {},
@@ -277,7 +278,7 @@ pub fn OP_1E(this: *NES) void {
 }
 
 /// [M] SLO a,x
-pub fn OP_1F(this: *NES) void {
+fn OP_1F(this: *NES) void {
     OPTYPE.AX_M(this);
     switch (this.timing) {
         else => {},
@@ -289,7 +290,8 @@ pub fn OP_1F(this: *NES) void {
 }
 
 /// JSR a
-pub fn OP_20(this: *NES) void {
+fn OP_20(this: *NES) void {
+    this.checkIRQ(5);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -304,7 +306,7 @@ pub fn OP_20(this: *NES) void {
 }
 
 /// [R] AND (d,x)
-pub fn OP_21(this: *NES) void {
+fn OP_21(this: *NES) void {
     OPTYPE.IX_R(this);
     switch (this.timing) {
         else => {},
@@ -313,12 +315,12 @@ pub fn OP_21(this: *NES) void {
 }
 
 /// STP
-pub fn OP_22(this: *NES) void {
+fn OP_22(this: *NES) void {
     OPTYPE.STP(this, 0x22);
 }
 
 /// [M] RLA (d,x)
-pub fn OP_23(this: *NES) void {
+fn OP_23(this: *NES) void {
     OPTYPE.IX_M(this);
     switch (this.timing) {
         else => {},
@@ -330,7 +332,7 @@ pub fn OP_23(this: *NES) void {
 }
 
 /// [R] BIT d
-pub fn OP_24(this: *NES) void {
+fn OP_24(this: *NES) void {
     OPTYPE.D_R(this);
     switch (this.timing) {
         else => {},
@@ -369,10 +371,11 @@ fn OP_27(this: *NES) void {
 }
 
 /// PLP
-pub fn OP_28(this: *NES) void {
+fn OP_28(this: *NES) void {
+    this.checkIRQ(3);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => this.R_getROM(this.pc),
+        1 => this.R_getROMWithPC(),
         2 => {},
         3 => { const fuckYouZig: u8 = 0x30; this.p.all = (this.p.all & fuckYouZig) | (this.R_pop() & ~fuckYouZig); }
     }
@@ -409,7 +412,7 @@ fn OP_2B(this: *NES) void {
 }
 
 /// [R] BIT a
-pub fn OP_2C(this: *NES) void {
+fn OP_2C(this: *NES) void {
     OPTYPE.A_R(this);
     switch (this.timing) {
         else => {},
@@ -418,7 +421,7 @@ pub fn OP_2C(this: *NES) void {
 }
 
 /// [R] AND a
-pub fn OP_2D(this: *NES) void {
+fn OP_2D(this: *NES) void {
     OPTYPE.A_R(this);
     switch (this.timing) {
         else => {},
@@ -427,7 +430,7 @@ pub fn OP_2D(this: *NES) void {
 }
 
 /// [M] ROL a
-pub fn OP_2E(this: *NES) void {
+fn OP_2E(this: *NES) void {
     OPTYPE.A_M(this);
     switch (this.timing) {
         else => {},
@@ -436,7 +439,7 @@ pub fn OP_2E(this: *NES) void {
 }
 
 /// [M] RLA a
-pub fn OP_2F(this: *NES) void {
+fn OP_2F(this: *NES) void {
     OPTYPE.A_M(this);
     switch (this.timing) {
         else => {},
@@ -448,12 +451,12 @@ pub fn OP_2F(this: *NES) void {
 }
 
 /// BMI
-pub fn OP_30(this: *NES) void {
+fn OP_30(this: *NES) void {
     OPTYPE.RA(this, this.p.flags.neg == 1);
 }
 
 /// [R] AND (d),y
-pub fn OP_31(this: *NES) void {
+fn OP_31(this: *NES) void {
     OPTYPE.IX_R(this);
     switch (this.timing) {
         else => {},
@@ -463,12 +466,12 @@ pub fn OP_31(this: *NES) void {
 }
 
 /// STP
-pub fn OP_32(this: *NES) void {
+fn OP_32(this: *NES) void {
     OPTYPE.STP(this, 0x32);
 }
 
 /// [M] RLA (d),y
-pub fn OP_33(this: *NES) void {
+fn OP_33(this: *NES) void {
     OPTYPE.IY_M(this);
     switch (this.timing) {
         else => {},
@@ -480,12 +483,12 @@ pub fn OP_33(this: *NES) void {
 }
 
 /// [R] NOP d,x
-pub fn OP_34(this: *NES) void {
+fn OP_34(this: *NES) void {
     OPTYPE.DX_R(this);
 }
 
 /// [R] AND d,x
-pub fn OP_35(this: *NES) void {
+fn OP_35(this: *NES) void {
     OPTYPE.DX_R(this);
     switch (this.timing) {
         else => {},
@@ -494,7 +497,7 @@ pub fn OP_35(this: *NES) void {
 }
 
 /// [M] ROL d,x
-pub fn OP_36(this: *NES) void {
+fn OP_36(this: *NES) void {
     OPTYPE.DX_M(this);
     switch (this.timing) {
         else => {},
@@ -503,7 +506,7 @@ pub fn OP_36(this: *NES) void {
 }
 
 /// [M] RLA d,x
-pub fn OP_37(this: *NES) void {
+fn OP_37(this: *NES) void {
     OPTYPE.DX_M(this);
     switch (this.timing) {
         else => {},
@@ -515,7 +518,7 @@ pub fn OP_37(this: *NES) void {
 }
 
 /// SEC
-pub fn OP_38(this: *NES) void {
+fn OP_38(this: *NES) void {
     OPTYPE.I(this);
     switch (this.timing) {
         else => {},
@@ -524,7 +527,7 @@ pub fn OP_38(this: *NES) void {
 }
 
 /// [R] AND a,y
-pub fn OP_39(this: *NES) void {
+fn OP_39(this: *NES) void {
     OPTYPE.AY_R(this);
     switch (this.timing) {
         else => {},
@@ -534,12 +537,12 @@ pub fn OP_39(this: *NES) void {
 }
 
 /// [R] NOP
-pub fn OP_3A(this: *NES) void {
+fn OP_3A(this: *NES) void {
     OPTYPE.I(this);
 }
 
 /// [M] RLA a,y
-pub fn OP_3B(this: *NES) void {
+fn OP_3B(this: *NES) void {
     OPTYPE.AY_M(this);
     switch (this.timing) {
         else => {},
@@ -551,12 +554,12 @@ pub fn OP_3B(this: *NES) void {
 }
 
 /// [R] NOP a,x
-pub fn OP_3C(this: *NES) void {
+fn OP_3C(this: *NES) void {
     OPTYPE.AX_R(this);
 }
 
 /// [R] AND a,x
-pub fn OP_3D(this: *NES) void {
+fn OP_3D(this: *NES) void {
     OPTYPE.AX_R(this);
     switch (this.timing) {
         else => {},
@@ -566,7 +569,7 @@ pub fn OP_3D(this: *NES) void {
 }
 
 /// [M] ROL a,x
-pub fn OP_3E(this: *NES) void {
+fn OP_3E(this: *NES) void {
     OPTYPE.AX_M(this);
     switch (this.timing) {
         else => {},
@@ -575,7 +578,7 @@ pub fn OP_3E(this: *NES) void {
 }
 
 /// [M] RLA a,x
-pub fn OP_3F(this: *NES) void {
+fn OP_3F(this: *NES) void {
     OPTYPE.AX_M(this);
     switch (this.timing) {
         else => {},
@@ -587,10 +590,11 @@ pub fn OP_3F(this: *NES) void {
 }
 
 /// RTI
-pub fn OP_40(this: *NES) void {
+fn OP_40(this: *NES) void {
+    this.checkIRQ(5);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => this.R_getROM(this.pc),
+        1 => this.R_getROMWithPC(),
         2 => {},
         3 => { const fuckYouZig: u8 = 0x20; this.p.all = this.R_pop() & ~fuckYouZig; },
         4 => this.setPC(this.R_pop(), 1),
@@ -599,7 +603,7 @@ pub fn OP_40(this: *NES) void {
 }
 
 /// [R] EOR (d,x)
-pub fn OP_41(this: *NES) void {
+fn OP_41(this: *NES) void {
     OPTYPE.IX_R(this);
     switch (this.timing) {
         else => {},
@@ -608,12 +612,12 @@ pub fn OP_41(this: *NES) void {
 }
 
 /// STP
-pub fn OP_42(this: *NES) void {
+fn OP_42(this: *NES) void {
     OPTYPE.STP(this, 0x42);
 }
 
 /// [M] SRE (d,x)
-pub fn OP_43(this: *NES) void {
+fn OP_43(this: *NES) void {
     OPTYPE.IX_M(this);
     switch (this.timing) {
         else => {},
@@ -625,12 +629,12 @@ pub fn OP_43(this: *NES) void {
 }
 
 /// [R] NOP d
-pub fn OP_44(this: *NES) void {
+fn OP_44(this: *NES) void {
     OPTYPE.D_R(this);
 }
 
 /// [R] EOR d
-pub fn OP_45(this: *NES) void {
+fn OP_45(this: *NES) void {
     OPTYPE.D_R(this);
     switch (this.timing) {
         else => {},
@@ -639,7 +643,7 @@ pub fn OP_45(this: *NES) void {
 }
 
 /// [M] LSR d
-pub fn OP_46(this: *NES) void {
+fn OP_46(this: *NES) void {
     OPTYPE.D_M(this);
     switch (this.timing) {
         else => {},
@@ -648,7 +652,7 @@ pub fn OP_46(this: *NES) void {
 }
 
 /// [M] SRE d
-pub fn OP_47(this: *NES) void {
+fn OP_47(this: *NES) void {
     OPTYPE.D_M(this);
     switch (this.timing) {
         else => {},
@@ -660,7 +664,7 @@ pub fn OP_47(this: *NES) void {
 }
 
 /// PHA
-pub fn OP_48(this: *NES) void {
+fn OP_48(this: *NES) void {
     OPTYPE.I(this);
     switch (this.timing) {
         else => {},
@@ -669,7 +673,7 @@ pub fn OP_48(this: *NES) void {
 }
 
 /// EOR #i
-pub fn OP_49(this: *NES) void {
+fn OP_49(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
@@ -678,7 +682,7 @@ pub fn OP_49(this: *NES) void {
 }
 
 /// [R] LSR
-pub fn OP_4A(this: *NES) void {
+fn OP_4A(this: *NES) void {
     OPTYPE.I(this);
     switch (this.timing) {
         else => {},
@@ -687,7 +691,7 @@ pub fn OP_4A(this: *NES) void {
 }
 
 /// [R] ALR #i
-pub fn OP_4B(this: *NES) void {
+fn OP_4B(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
@@ -699,7 +703,8 @@ pub fn OP_4B(this: *NES) void {
 }
 
 /// JMP a
-pub fn OP_4C(this: *NES) void {
+fn OP_4C(this: *NES) void {
+    this.checkIRQ(4);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
@@ -714,7 +719,7 @@ pub fn OP_4C(this: *NES) void {
 }
 
 /// [R] EOR a
-pub fn OP_4D(this: *NES) void {
+fn OP_4D(this: *NES) void {
     OPTYPE.A_R(this);
     switch (this.timing) {
         else => {},
@@ -723,7 +728,7 @@ pub fn OP_4D(this: *NES) void {
 }
 
 /// [M] LSR a
-pub fn OP_4E(this: *NES) void {
+fn OP_4E(this: *NES) void {
     OPTYPE.A_M(this);
     switch (this.timing) {
         else => {},
@@ -732,7 +737,7 @@ pub fn OP_4E(this: *NES) void {
 }
 
 /// [M] SRE a
-pub fn OP_4F(this: *NES) void {
+fn OP_4F(this: *NES) void {
     OPTYPE.A_M(this);
     switch (this.timing) {
         else => {},
@@ -744,12 +749,12 @@ pub fn OP_4F(this: *NES) void {
 }
 
 /// BVC
-pub fn OP_50(this: *NES) void {
+fn OP_50(this: *NES) void {
     OPTYPE.RA(this, this.p.flags.over == 0);
 }
 
 /// [R] EOR (d),y
-pub fn OP_51(this: *NES) void {
+fn OP_51(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
@@ -759,12 +764,12 @@ pub fn OP_51(this: *NES) void {
 }
 
 /// STP
-pub fn OP_52(this: *NES) void {
+fn OP_52(this: *NES) void {
     OPTYPE.STP(this, 0x52);
 }
 
 /// [M] SRE (d),y
-pub fn OP_53(this: *NES) void {
+fn OP_53(this: *NES) void {
     OPTYPE.IY_M(this);
     switch (this.timing) {
         else => {},
@@ -776,12 +781,12 @@ pub fn OP_53(this: *NES) void {
 }
 
 /// [R] NOP d,x
-pub fn OP_54(this: *NES) void {
+fn OP_54(this: *NES) void {
     OPTYPE.DX_R(this);
 }
 
 /// [R] EOR d,x
-pub fn OP_55(this: *NES) void {
+fn OP_55(this: *NES) void {
     OPTYPE.DX_R(this);
     switch (this.timing) {
         else => {},
@@ -790,7 +795,7 @@ pub fn OP_55(this: *NES) void {
 }
 
 /// [M] LSR d,x
-pub fn OP_56(this: *NES) void {
+fn OP_56(this: *NES) void {
     OPTYPE.DX_M(this);
     switch (this.timing) {
         else => {},
@@ -799,7 +804,7 @@ pub fn OP_56(this: *NES) void {
 }
 
 /// [M] SRE d,x
-pub fn OP_57(this: *NES) void {
+fn OP_57(this: *NES) void {
     OPTYPE.DX_M(this);
     switch (this.timing) {
         else => {},
@@ -811,7 +816,7 @@ pub fn OP_57(this: *NES) void {
 }
 
 /// CLI
-pub fn OP_58(this: *NES) void {
+fn OP_58(this: *NES) void {
     OPTYPE.I(this);
     switch (this.timing) {
         else => {},
@@ -820,7 +825,7 @@ pub fn OP_58(this: *NES) void {
 }
 
 /// [R] EOR a,y
-pub fn OP_59(this: *NES) void {
+fn OP_59(this: *NES) void {
     OPTYPE.AY_R(this);
     switch (this.timing) {
         else => {},
@@ -830,12 +835,12 @@ pub fn OP_59(this: *NES) void {
 }
 
 /// [R] NOP
-pub fn OP_5A(this: *NES) void {
+fn OP_5A(this: *NES) void {
     OPTYPE.I(this);
 }
 
 /// [M] SRE a,y
-pub fn OP_5B(this: *NES) void {
+fn OP_5B(this: *NES) void {
     OPTYPE.AY_M(this);
     switch (this.timing) {
         else => {},
@@ -847,12 +852,12 @@ pub fn OP_5B(this: *NES) void {
 }
 
 /// [R] NOP a,x
-pub fn OP_5C(this: *NES) void {
+fn OP_5C(this: *NES) void {
     OPTYPE.AX_R(this);
 }
 
 /// [R] EOR a,x
-pub fn OP_5D(this: *NES) void {
+fn OP_5D(this: *NES) void {
     OPTYPE.AX_R(this);
     switch (this.timing) {
         else => {},
@@ -862,7 +867,7 @@ pub fn OP_5D(this: *NES) void {
 }
 
 /// [M] LSR a,x
-pub fn OP_5E(this: *NES) void {
+fn OP_5E(this: *NES) void {
     OPTYPE.AX_M(this);
     switch (this.timing) {
         else => {},
@@ -871,7 +876,7 @@ pub fn OP_5E(this: *NES) void {
 }
 
 /// [M] SRE a,x
-pub fn OP_5F(this: *NES) void {
+fn OP_5F(this: *NES) void {
     OPTYPE.AX_M(this);
     switch (this.timing) {
         else => {},
@@ -883,7 +888,8 @@ pub fn OP_5F(this: *NES) void {
 }
 
 /// RTS
-pub fn OP_60(this: *NES) void {
+fn OP_60(this: *NES) void {
+    this.checkIRQ(5);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_getROMWithD(),
@@ -895,7 +901,7 @@ pub fn OP_60(this: *NES) void {
 }
 
 /// [R] ADC (d,x)
-pub fn OP_61(this: *NES) void {
+fn OP_61(this: *NES) void {
     OPTYPE.IX_R(this);
     switch (this.timing) {
         else => {},
@@ -904,12 +910,12 @@ pub fn OP_61(this: *NES) void {
 }
 
 /// STP
-pub fn OP_62(this: *NES) void {
+fn OP_62(this: *NES) void {
     OPTYPE.STP(this, 0x62);
 }
 
 /// [M] RRA (d,x)
-pub fn OP_63(this: *NES) void {
+fn OP_63(this: *NES) void {
     OPTYPE.IX_M(this);
     switch (this.timing) {
         else => {},
@@ -921,12 +927,12 @@ pub fn OP_63(this: *NES) void {
 }
 
 /// [R] NOP d
-pub fn OP_64(this: *NES) void {
+fn OP_64(this: *NES) void {
     OPTYPE.D_R(this);
 }
 
 /// [R] ADC d
-pub fn OP_65(this: *NES) void {
+fn OP_65(this: *NES) void {
     OPTYPE.D_R(this);
     switch (this.timing) {
         else => {},
@@ -935,7 +941,7 @@ pub fn OP_65(this: *NES) void {
 }
 
 /// [M] ROR d
-pub fn OP_66(this: *NES) void {
+fn OP_66(this: *NES) void {
     OPTYPE.D_M(this);
     switch (this.timing) {
         else => {},
@@ -944,7 +950,7 @@ pub fn OP_66(this: *NES) void {
 }
 
 /// [M] RRA d
-pub fn OP_67(this: *NES) void {
+fn OP_67(this: *NES) void {
     OPTYPE.D_M(this);
     switch (this.timing) {
         else => {},
@@ -956,10 +962,11 @@ pub fn OP_67(this: *NES) void {
 }
 
 /// PLA
-pub fn OP_68(this: *NES) void {
+fn OP_68(this: *NES) void {
+    this.checkIRQ(3);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => this.R_getROM(this.pc),
+        1 => this.R_getROMWithPC(),
         2 => {},
         3 => {
             this.a = this.R_pop();
@@ -971,7 +978,7 @@ pub fn OP_68(this: *NES) void {
 }
 
 /// ADC #i
-pub fn OP_69(this: *NES) void {
+fn OP_69(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
@@ -979,15 +986,79 @@ pub fn OP_69(this: *NES) void {
     }
 }
 
-//...
+/// ROR
+fn OP_6A(this: *NES) void {
+    OPTYPE.I(this);
+    switch (this.timing) {
+        else => {},
+        1 => ALU.RORA(this),
+    }
+}
+
+/// ARR #i
+fn OP_6B(this: *NES) void {
+    OPTYPE.M(this);
+    switch (this.timing) {
+        else => {},
+        1 => {
+            ALU.AND(this);
+            ALU.RORA(this);
+
+            this.p.flags.carry = @intFromBool((this.a & 0x40) == 0x40);
+            this.p.flags.over  = @intFromBool((this.a & 0x40) == 0x40) ^ @intFromBool((this.a & 0x20) == 0x20);
+        }
+    }
+}
+
+/// JMP (a)
+fn OP_6C(this: *NES) void {
+    this.checkIRQ(4);
+    switch (this.timing) {
+        else => this.resetTiming(),
+        1 => { this.R_readROM(); this.setAB(this.data, 0); },
+        2 => { this.R_readROM(); this.setAB(this.data, 1); },
+        3 => { this.R_getROMWithPC(); this.setPC(this.ab.half.low, 0); },
+        4 => { this.R_getROMWithPC(); this.setPC(this.ab.half.high, 1); },
+    }
+}
+
+/// [R] ADC a
+fn OP_6D(this: *NES) void {
+    OPTYPE.A_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => ALU.ADC(this),
+    }
+}
+
+/// [M] ROR a
+fn OP_6E(this: *NES) void {
+    OPTYPE.A_M(this);
+    switch (this.timing) {
+        else => {},
+        4 => ALU.ROR(this),
+    }
+}
+
+/// [M] ROR a
+fn OP_6F(this: *NES) void {
+    OPTYPE.A_M(this);
+    switch (this.timing) {
+        else => {},
+        4 => {
+            ALU.ROR(this);
+            ALU.ADC(this);
+        },
+    }
+}
 
 /// BVS
-pub fn OP_70(this: *NES) void {
+fn OP_70(this: *NES) void {
     OPTYPE.RA(this, this.p.flags.over == 1);
 }
 
 /// [R] ADC (d),y
-pub fn OP_71(this: *NES) void {
+fn OP_71(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
@@ -997,12 +1068,12 @@ pub fn OP_71(this: *NES) void {
 }
 
 /// STP
-pub fn OP_72(this: *NES) void {
+fn OP_72(this: *NES) void {
     OPTYPE.STP(this, 0x72);
 }
 
 /// [M] RRA (d),y
-pub fn OP_73(this: *NES) void {
+fn OP_73(this: *NES) void {
     OPTYPE.IY_M(this);
     switch (this.timing) {
         else => {},
@@ -1014,12 +1085,12 @@ pub fn OP_73(this: *NES) void {
 }
 
 /// [R] NOP d,x
-pub fn OP_74(this: *NES) void {
+fn OP_74(this: *NES) void {
     OPTYPE.DX_R(this);
 }
 
 /// [R] ADC d,x
-pub fn OP_75(this: *NES) void {
+fn OP_75(this: *NES) void {
     OPTYPE.DX_R(this);
     switch (this.timing) {
         else => {},
@@ -1028,7 +1099,7 @@ pub fn OP_75(this: *NES) void {
 }
 
 /// [M] ROR d,x
-pub fn OP_76(this: *NES) void {
+fn OP_76(this: *NES) void {
     OPTYPE.DX_M(this);
     switch (this.timing) {
         else => {},
@@ -1037,7 +1108,7 @@ pub fn OP_76(this: *NES) void {
 }
 
 /// [M] RRA d,x
-pub fn OP_77(this: *NES) void {
+fn OP_77(this: *NES) void {
     OPTYPE.DX_M(this);
     switch (this.timing) {
         else => {},
@@ -1049,45 +1120,107 @@ pub fn OP_77(this: *NES) void {
 }
 
 /// SEI
-pub fn OP_78(this: *NES) void {
+fn OP_78(this: *NES) void {
+    this.checkIRQ(1);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.setI = true,
     }
 }
 
-//...
-
-/// [R] NOP #i
-pub fn OP_80(this: *NES) void {
-    OPTYPE.M(this);
-}
-
-/// [R] STA (d,x)
-pub fn OP_81(this: *NES) void {
-    OPTYPE.IX_W(this);
+/// [R] ADC a,y
+fn OP_79(this: *NES) void {
+    OPTYPE.AY_R(this);
     switch (this.timing) {
         else => {},
-        5 => this.W_writeROMVD(this.a),
+        3 => if (this.add.flags.carry == 0) { ALU.ADC(this); },
+        4 => ALU.ADC(this),
+    }
+}
+
+/// NOP
+fn OP_7A(this: *NES) void {
+    OPTYPE.I(this);
+}
+
+/// [M] RRA a,y
+fn OP_7B(this: *NES) void {
+    OPTYPE.AY_M(this);
+    switch (this.timing) {
+        else => {},
+        5 => {
+            ALU.ROR(this);
+            ALU.ADC(this);
+        },
+    }
+}
+
+/// [R] NOP a,x
+fn OP_7C(this: *NES) void {
+    OPTYPE.AX_R(this);
+}
+
+/// [R] ADC a,x
+fn OP_7D(this: *NES) void {
+    OPTYPE.AX_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => if (this.add.flags.carry == 0) { ALU.ADC(this); },
+        4 => ALU.ADC(this),
+    }
+}
+
+/// [M] ROR a,x
+fn OP_7E(this: *NES) void {
+    OPTYPE.AX_M(this);
+    switch (this.timing) {
+        else => {},
+        5 => ALU.ROR(this),
+    }
+}
+
+/// [M] RRA a,x
+fn OP_7F(this: *NES) void {
+    OPTYPE.AX_M(this);
+    switch (this.timing) {
+        else => {},
+        5 => {
+            ALU.ROR(this);
+            ALU.ADC(this);
+        },
     }
 }
 
 /// [R] NOP #i
-pub fn OP_82(this: *NES) void {
+fn OP_80(this: *NES) void {
     OPTYPE.M(this);
 }
 
 /// [W] STA (d,x)
-pub fn OP_83(this: *NES) void {
+fn OP_81(this: *NES) void {
     OPTYPE.IX_W(this);
     switch (this.timing) {
         else => {},
-        5 => this.W_writeROMVD(this.a & this.x),
+        5 => this.W_writeROMV(this.a),
+    }
+}
+
+/// [R] NOP #i
+fn OP_82(this: *NES) void {
+    OPTYPE.M(this);
+}
+
+/// [W] STA (d,x)
+fn OP_83(this: *NES) void {
+    OPTYPE.IX_W(this);
+    switch (this.timing) {
+        else => {},
+        5 => this.W_writeROMV(this.a & this.x),
     }
 }
 
 /// [W] STY d
-pub fn OP_84(this: *NES) void {
+fn OP_84(this: *NES) void {
     OPTYPE.D_W(this);
     switch (this.timing) {
         else => {},
@@ -1096,7 +1229,7 @@ pub fn OP_84(this: *NES) void {
 }
 
 /// [W] STA d
-pub fn OP_85(this: *NES) void {
+fn OP_85(this: *NES) void {
     OPTYPE.D_W(this);
     switch (this.timing) {
         else => {},
@@ -1105,7 +1238,7 @@ pub fn OP_85(this: *NES) void {
 }
 
 /// [W] STX d
-pub fn OP_86(this: *NES) void {
+fn OP_86(this: *NES) void {
     OPTYPE.D_W(this);
     switch (this.timing) {
         else => {},
@@ -1114,7 +1247,7 @@ pub fn OP_86(this: *NES) void {
 }
 
 /// [W] SAX d
-pub fn OP_87(this: *NES) void {
+fn OP_87(this: *NES) void {
     OPTYPE.D_W(this);
     switch (this.timing) {
         else => {},
@@ -1123,7 +1256,8 @@ pub fn OP_87(this: *NES) void {
 }
 
 /// DEY
-pub fn OP_88(this: *NES) void {
+fn OP_88(this: *NES) void {
+    this.checkIRQ(1);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => {
@@ -1136,26 +1270,71 @@ pub fn OP_88(this: *NES) void {
 }
 
 /// NOP #i
-pub fn OP_89(this: *NES) void {
+fn OP_89(this: *NES) void {
     OPTYPE.M(this);
 }
 
 /// TXA
-pub fn OP_8A(this: *NES) void {
-    OPTYPE.I(this);
+fn OP_8A(this: *NES) void {
+    this.checkIRQ(1);
     switch (this.timing) {
-        else => {},
+        else => this.resetTiming(),
         1 => ALU.TXA(this),
     }
 }
 
+/// [R] XAA #i
+fn OP_8B(this: *NES) void {
+    OPTYPE.I(this);
+    switch (this.timing) {
+        else => {},
+        1 => this.a = (this.a | 0xEE) & this.x & this.data,
+    }
+}
+
+/// [W] STY a
+fn OP_8C(this: *NES) void {
+    OPTYPE.A_W(this);
+    switch (this.timing) {
+        else => {},
+        3 => this.W_writeROMV(this.y),
+    }
+}
+
+/// [W] STA a
+fn OP_8D(this: *NES) void {
+    OPTYPE.A_W(this);
+    switch (this.timing) {
+        else => {},
+        3 => this.W_writeROMV(this.a),
+    }
+}
+
+/// [W] STX a
+fn OP_8E(this: *NES) void {
+    OPTYPE.A_W(this);
+    switch (this.timing) {
+        else => {},
+        3 => this.W_writeROMV(this.x),
+    }
+}
+
+/// [W] SAX a
+fn OP_8F(this: *NES) void {
+    OPTYPE.A_W(this);
+    switch (this.timing) {
+        else => {},
+        3 => this.W_writeROMV(this.a & this.x),
+    }
+}
+
 /// BCC
-pub fn OP_90(this: *NES) void {
+fn OP_90(this: *NES) void {
     OPTYPE.RA(this, this.p.flags.carry == 0);
 }
 
 /// [R] STA (d),y
-pub fn OP_91(this: *NES) void {
+fn OP_91(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
@@ -1165,12 +1344,12 @@ pub fn OP_91(this: *NES) void {
 }
 
 /// STP
-pub fn OP_92(this: *NES) void {
+fn OP_92(this: *NES) void {
     OPTYPE.STP(this, 0x92);
 }
 
 /// [M] SHA (d),y
-pub fn OP_93(this: *NES) void {
+fn OP_93(this: *NES) void {
     OPTYPE.IY_M(this);
     switch (this.timing) {
         else => {},
@@ -1183,7 +1362,7 @@ pub fn OP_93(this: *NES) void {
 }
 
 /// [W] STY d,x
-pub fn OP_94(this: *NES) void {
+fn OP_94(this: *NES) void {
     OPTYPE.DX_W(this);
     switch (this.timing) {
         else => {},
@@ -1192,7 +1371,7 @@ pub fn OP_94(this: *NES) void {
 }
 
 /// [W] STA d,x
-pub fn OP_95(this: *NES) void {
+fn OP_95(this: *NES) void {
     OPTYPE.DX_W(this);
     switch (this.timing) {
         else => {},
@@ -1201,7 +1380,7 @@ pub fn OP_95(this: *NES) void {
 }
 
 /// [W] STX d,y
-pub fn OP_96(this: *NES) void {
+fn OP_96(this: *NES) void {
     OPTYPE.DY_W(this);
     switch (this.timing) {
         else => {},
@@ -1210,7 +1389,7 @@ pub fn OP_96(this: *NES) void {
 }
 
 /// [W] SAX d,y
-pub fn OP_97(this: *NES) void {
+fn OP_97(this: *NES) void {
     OPTYPE.DY_W(this);
     switch (this.timing) {
         else => {},
@@ -1219,7 +1398,7 @@ pub fn OP_97(this: *NES) void {
 }
 
 /// TYA
-pub fn OP_98(this: *NES) void {
+fn OP_98(this: *NES) void {
     OPTYPE.I(this);
     switch (this.timing) {
         else => {},
@@ -1227,10 +1406,96 @@ pub fn OP_98(this: *NES) void {
     }
 }
 
+/// [W] STA a,y
+fn OP_99(this: *NES) void {
+    OPTYPE.AY_W(this);
+    switch (this.timing) {
+        else => {},
+        4 => this.W_writeROMV(this.a),
+    }
+}
+
+/// TXS
+fn OP_9A(this: *NES) void {
+    OPTYPE.I(this);
+    switch (this.timing) {
+        else => {},
+        1 => ALU.TXS(this),
+    }
+}
+
+/// [W] TAS a,y
+fn OP_9B(this: *NES) void {
+    OPTYPE.AY_W(this);
+    switch (this.timing) {
+        else => {},
+        4 => {
+            this.sp = this.x & this.a;
+            
+            var pc: u8 = @truncate(this.pc >> 8);
+            pc, _ = @addWithOverflow(pc, 1);
+            this.W_writeROMV(this.a & this.x & pc);
+
+            this.p.flags.zero  = @intFromBool(this.sp == 0x00);
+            this.p.flags.neg   = @intFromBool(this.sp >= 0x80);
+        },
+    }
+}
+
+// TODO: implement that weird caveat to these SHx commands
+
+/// [W] SHY a,x
+fn OP_9C(this: *NES) void {
+    OPTYPE.AX_W(this);
+    switch (this.timing) {
+        else => {},
+        4 => {
+            var pc: u8 = @truncate(this.pc >> 8);
+            pc, _ = @addWithOverflow(pc, 1);
+            this.W_writeROMV(this.y & pc);
+        },
+    }
+}
+
+/// [W] STA a,x
+fn OP_9D(this: *NES) void {
+    OPTYPE.AX_W(this);
+    switch (this.timing) {
+        else => {},
+        4 => this.W_writeROMV(this.a),
+    }
+}
+
+/// [W] SHX a,y
+fn OP_9E(this: *NES) void {
+    OPTYPE.AX_W(this);
+    switch (this.timing) {
+        else => {},
+        4 => {
+            var pc: u8 = @truncate(this.pc >> 8);
+            pc, _ = @addWithOverflow(pc, 1);
+            this.W_writeROMV(this.x & pc);
+        },
+    }
+}
+
+/// [W] SHA a,y
+fn OP_9F(this: *NES) void {
+    OPTYPE.AX_W(this);
+    switch (this.timing) {
+        else => {},
+        4 => {
+            var pc: u8 = @truncate(this.pc >> 8);
+            pc, _ = @addWithOverflow(pc, 1);
+            this.W_writeROMV(this.x & this.a & pc);
+        },
+    }
+}
+
 // ...
 
 /// [R] LDY #i
-pub fn OP_A0(this: *NES) void {
+fn OP_A0(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
@@ -1239,7 +1504,7 @@ pub fn OP_A0(this: *NES) void {
 }
 
 /// [R] LDA (d,x)
-pub fn OP_A1(this: *NES) void {
+fn OP_A1(this: *NES) void {
     OPTYPE.IX_R(this);
     switch (this.timing) {
         else => {},
@@ -1248,7 +1513,7 @@ pub fn OP_A1(this: *NES) void {
 }
 
 /// [R] LDX #i
-pub fn OP_A2(this: *NES) void {
+fn OP_A2(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
@@ -1257,7 +1522,7 @@ pub fn OP_A2(this: *NES) void {
 }
 
 /// [R] LAX (d,x)
-pub fn OP_A3(this: *NES) void {
+fn OP_A3(this: *NES) void {
     OPTYPE.IX_R(this);
     switch (this.timing) {
         else => {},
@@ -1269,7 +1534,7 @@ pub fn OP_A3(this: *NES) void {
 }
 
 /// [R] LDY d
-pub fn OP_A4(this: *NES) void {
+fn OP_A4(this: *NES) void {
     OPTYPE.D_R(this);
     switch (this.timing) {
         else => {},
@@ -1278,7 +1543,7 @@ pub fn OP_A4(this: *NES) void {
 }
 
 /// [R] LDA d
-pub fn OP_A5(this: *NES) void {
+fn OP_A5(this: *NES) void {
     OPTYPE.D_R(this);
     switch (this.timing) {
         else => {},
@@ -1287,7 +1552,7 @@ pub fn OP_A5(this: *NES) void {
 }
 
 /// [R] LDX d
-pub fn OP_A6(this: *NES) void {
+fn OP_A6(this: *NES) void {
     OPTYPE.D_R(this);
     switch (this.timing) {
         else => {},
@@ -1296,7 +1561,7 @@ pub fn OP_A6(this: *NES) void {
 }
 
 /// [R] LAX d
-pub fn OP_A7(this: *NES) void {
+fn OP_A7(this: *NES) void {
     OPTYPE.D_R(this);
     switch (this.timing) {
         else => {},
@@ -1308,7 +1573,7 @@ pub fn OP_A7(this: *NES) void {
 }
 
 /// TAY
-pub fn OP_A8(this: *NES) void {
+fn OP_A8(this: *NES) void {
     OPTYPE.I(this);
     switch (this.timing) {
         else => {},
@@ -1317,7 +1582,7 @@ pub fn OP_A8(this: *NES) void {
 }
 
 /// [R] LDA #i
-pub fn OP_A9(this: *NES) void {
+fn OP_A9(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
@@ -1326,22 +1591,21 @@ pub fn OP_A9(this: *NES) void {
 }
 
 /// TAX
-pub fn OP_AA(this: *NES) void {
+fn OP_AA(this: *NES) void {
+    this.checkIRQ(2);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => ALU.TAX(this),
     }
 }
 
-//...
-
 /// BCS
-pub fn OP_B0(this: *NES) void {
+fn OP_B0(this: *NES) void {
     OPTYPE.RA(this, this.p.flags.carry == 1);
 }
 
 /// [R] LDA (d),y
-pub fn OP_B1(this: *NES) void {
+fn OP_B1(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
@@ -1351,12 +1615,12 @@ pub fn OP_B1(this: *NES) void {
 }
 
 /// STP
-pub fn OP_B2(this: *NES) void {
+fn OP_B2(this: *NES) void {
     OPTYPE.STP(this, 0xB2);
 }
 
 /// [M] LAX (d),y
-pub fn OP_B3(this: *NES) void {
+fn OP_B3(this: *NES) void {
     OPTYPE.IY_M(this);
     switch (this.timing) {
         else => {},
@@ -1368,7 +1632,7 @@ pub fn OP_B3(this: *NES) void {
 }
 
 /// [R] LDY d,x
-pub fn OP_B4(this: *NES) void {
+fn OP_B4(this: *NES) void {
     OPTYPE.DX_R(this);
     switch (this.timing) {
         else => {},
@@ -1377,7 +1641,7 @@ pub fn OP_B4(this: *NES) void {
 }
 
 /// [R] LDA d,x
-pub fn OP_B5(this: *NES) void {
+fn OP_B5(this: *NES) void {
     OPTYPE.DX_R(this);
     switch (this.timing) {
         else => {},
@@ -1386,7 +1650,7 @@ pub fn OP_B5(this: *NES) void {
 }
 
 /// [R] LDX d,y
-pub fn OP_B6(this: *NES) void {
+fn OP_B6(this: *NES) void {
     OPTYPE.DY_R(this);
     switch (this.timing) {
         else => {},
@@ -1395,7 +1659,7 @@ pub fn OP_B6(this: *NES) void {
 }
 
 /// [R] LAX d,y
-pub fn OP_B7(this: *NES) void {
+fn OP_B7(this: *NES) void {
     OPTYPE.DY_R(this);
     switch (this.timing) {
         else => {},
@@ -1407,17 +1671,95 @@ pub fn OP_B7(this: *NES) void {
 }
 
 /// CLV
-pub fn OP_B8(this: *NES) void {
+fn OP_B8(this: *NES) void {
+    this.checkIRQ(1);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.p.flags.over = 0,
     }
 }
 
-//...
+/// [R] LDA a,y
+fn OP_B9(this: *NES) void {
+    OPTYPE.AY_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => if (this.add.flags.carry == 0) { ALU.LDA(this); },
+        4 => ALU.LDA(this),
+    }
+}
+
+/// TSX
+fn OP_BA(this: *NES) void {
+    OPTYPE.I(this);
+    switch (this.timing) {
+        else => {},
+        1 => ALU.TSX(this),
+    }
+}
+
+/// [M] LAS a,y
+fn OP_BB(this: *NES) void {
+    OPTYPE.AY_M(this);
+    switch (this.timing) {
+        else => {},
+        5 => {
+            const val = this.data & this.sp;
+            this.a  = val;
+            this.x  = val;
+            this.sp = val;
+        },
+    }
+}
+
+/// [R] LDY a,x
+fn OP_BC(this: *NES) void {
+    OPTYPE.AX_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => if (this.add.flags.carry == 0) { ALU.LDY(this); },
+        4 => ALU.LDY(this),
+    }
+}
+
+/// [R] LDA a,x
+fn OP_BD(this: *NES) void {
+    OPTYPE.AX_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => if (this.add.flags.carry == 0) { ALU.LDA(this); },
+        4 => ALU.LDA(this),
+    }
+}
+
+/// [R] LDX a,y
+fn OP_BE(this: *NES) void {
+    OPTYPE.AY_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => if (this.add.flags.carry == 0) { ALU.LDX(this); },
+        4 => ALU.LDX(this),
+    }
+}
+
+/// [R] LAX a,y
+fn OP_BF(this: *NES) void {
+    OPTYPE.AX_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => if (this.add.flags.carry == 0) {
+            ALU.LDA(this);
+            ALU.TAX(this);
+        },
+        4 => {
+            ALU.LDA(this);
+            ALU.TAX(this);
+        },
+    }
+}
 
 /// CPY #i
-pub fn OP_C0(this: *NES) void {
+fn OP_C0(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
@@ -1426,7 +1768,7 @@ pub fn OP_C0(this: *NES) void {
 }
 
 /// [R] CMP (d,x)
-pub fn OP_C1(this: *NES) void {
+fn OP_C1(this: *NES) void {
     OPTYPE.IX_R(this);
     switch (this.timing) {
         else => {},
@@ -1435,12 +1777,12 @@ pub fn OP_C1(this: *NES) void {
 }
 
 /// [R] NOP #i
-pub fn OP_C2(this: *NES) void {
+fn OP_C2(this: *NES) void {
     OPTYPE.M(this);
 }
 
 /// [R] DCP (d,x)
-pub fn OP_C3(this: *NES) void {
+fn OP_C3(this: *NES) void {
     OPTYPE.IX_R(this);
     switch (this.timing) {
         else => {},
@@ -1452,7 +1794,7 @@ pub fn OP_C3(this: *NES) void {
 }
 
 /// [R] CPY d
-pub fn OP_C4(this: *NES) void {
+fn OP_C4(this: *NES) void {
     OPTYPE.D_R(this);
     switch (this.timing) {
         else => {},
@@ -1461,7 +1803,7 @@ pub fn OP_C4(this: *NES) void {
 }
 
 /// [R] CMP d
-pub fn OP_C5(this: *NES) void {
+fn OP_C5(this: *NES) void {
     OPTYPE.D_R(this);
     switch (this.timing) {
         else => {},
@@ -1470,7 +1812,7 @@ pub fn OP_C5(this: *NES) void {
 }
 
 /// [M] DEC d
-pub fn OP_C6(this: *NES) void {
+fn OP_C6(this: *NES) void {
     OPTYPE.D_M(this);
     switch (this.timing) {
         else => {},
@@ -1479,7 +1821,7 @@ pub fn OP_C6(this: *NES) void {
 }
 
 /// [M] DCP d
-pub fn OP_C7(this: *NES) void {
+fn OP_C7(this: *NES) void {
     OPTYPE.D_M(this);
     switch (this.timing) {
         else => {},
@@ -1491,7 +1833,8 @@ pub fn OP_C7(this: *NES) void {
 }
 
 /// INY
-pub fn OP_C8(this: *NES) void {
+fn OP_C8(this: *NES) void {
+    this.checkIRQ(1);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => {
@@ -1504,7 +1847,7 @@ pub fn OP_C8(this: *NES) void {
 }
 
 /// [R] CMP #i
-pub fn OP_C9(this: *NES) void {
+fn OP_C9(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
@@ -1513,7 +1856,8 @@ pub fn OP_C9(this: *NES) void {
 }
 
 /// DEX
-pub fn OP_CA(this: *NES) void {
+fn OP_CA(this: *NES) void {
+    this.checkIRQ(1);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => {
@@ -1525,15 +1869,15 @@ pub fn OP_CA(this: *NES) void {
     }
 }
 
-//...
+
 
 /// BNE
-pub fn OP_D0(this: *NES) void {
+fn OP_D0(this: *NES) void {
     OPTYPE.RA(this, this.p.flags.zero == 0);
 }
 
 /// [R] CMP (d),y
-pub fn OP_D1(this: *NES) void {
+fn OP_D1(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
@@ -1543,12 +1887,12 @@ pub fn OP_D1(this: *NES) void {
 }
 
 /// STP
-pub fn OP_D2(this: *NES) void {
+fn OP_D2(this: *NES) void {
     OPTYPE.STP(this, 0xD2);
 }
 
 /// [M] DCP (d),y
-pub fn OP_D3(this: *NES) void {
+fn OP_D3(this: *NES) void {
     OPTYPE.IY_M(this);
     switch (this.timing) {
         else => {},
@@ -1560,12 +1904,12 @@ pub fn OP_D3(this: *NES) void {
 }
 
 /// [R] NOP d,x
-pub fn OP_D4(this: *NES) void {
+fn OP_D4(this: *NES) void {
     OPTYPE.DX_R(this);
 }
 
 /// [R] CMP d,x
-pub fn OP_D5(this: *NES) void {
+fn OP_D5(this: *NES) void {
     OPTYPE.DX_R(this);
     switch (this.timing) {
         else => {},
@@ -1574,7 +1918,7 @@ pub fn OP_D5(this: *NES) void {
 }
 
 /// [M] DEC d,x
-pub fn OP_D6(this: *NES) void {
+fn OP_D6(this: *NES) void {
     OPTYPE.DX_M(this);
     switch (this.timing) {
         else => {},
@@ -1583,7 +1927,7 @@ pub fn OP_D6(this: *NES) void {
 }
 
 /// [M] DCP d,x
-pub fn OP_D7(this: *NES) void {
+fn OP_D7(this: *NES) void {
     OPTYPE.DX_M(this);
     switch (this.timing) {
         else => {},
@@ -1595,17 +1939,18 @@ pub fn OP_D7(this: *NES) void {
 }
 
 /// CLD
-pub fn OP_D8(this: *NES) void {
+fn OP_D8(this: *NES) void {
+    this.checkIRQ(1);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.p.flags.dec = 0,
     }
 }
 
-//...
+
 
 /// CPX #i
-pub fn OP_E0(this: *NES) void {
+fn OP_E0(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
@@ -1613,8 +1958,74 @@ pub fn OP_E0(this: *NES) void {
     }
 }
 
+/// [R] SBC (d,x)
+fn OP_E1(this: *NES) void {
+    OPTYPE.IX_R(this);
+    switch (this.timing) {
+        else => {},
+        5 => ALU.SBC(this),
+    }
+}
+
+/// NOP #i
+fn OP_E2(this: *NES) void {
+    OPTYPE.M(this);
+}
+
+/// [M] ISC (d,x)
+fn OP_E3(this: *NES) void {
+    OPTYPE.IX_M(this);
+    switch (this.timing) {
+        else => {},
+        6 => {
+            ALU.INC(this);
+            ALU.SBC(this);
+        },
+    }
+}
+
+/// [R] CPX d
+fn OP_E4(this: *NES) void {
+    OPTYPE.D_R(this);
+    switch (this.timing) {
+        else => {},
+        2 => ALU.CPX(this),
+    }
+}
+
+/// [R] SBC d
+fn OP_E5(this: *NES) void {
+    OPTYPE.D_R(this);
+    switch (this.timing) {
+        else => {},
+        2 => ALU.SBC(this),
+    }
+}
+
+/// [M] INC d
+fn OP_E6(this: *NES) void {
+    OPTYPE.D_M(this);
+    switch (this.timing) {
+        else => {},
+        3 => ALU.INC(this),
+    }
+}
+
+/// [M] ISC d
+fn OP_E7(this: *NES) void {
+    OPTYPE.D_M(this);
+    switch (this.timing) {
+        else => {},
+        3 => {
+            ALU.INC(this);
+            ALU.SBC(this);
+        },
+    }
+}
+
 /// INX
-pub fn OP_E8(this: *NES) void {
+fn OP_E8(this: *NES) void {
+    this.checkIRQ(1);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => {
@@ -1627,7 +2038,7 @@ pub fn OP_E8(this: *NES) void {
 }
 
 /// SBC #i
-pub fn OP_E9(this: *NES) void {
+fn OP_E9(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
@@ -1636,19 +2047,19 @@ pub fn OP_E9(this: *NES) void {
 }
 
 /// NOP
-pub fn OP_EA(this: *NES) void {
+fn OP_EA(this: *NES) void {
     OPTYPE.I(this);
 }
 
-//...
+
 
 /// BEQ
-pub fn OP_F0(this: *NES) void {
+fn OP_F0(this: *NES) void {
     OPTYPE.RA(this, this.p.flags.zero == 1);
 }
 
 /// [R] SBC (d),y
-pub fn OP_F1(this: *NES) void {
+fn OP_F1(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
@@ -1658,12 +2069,12 @@ pub fn OP_F1(this: *NES) void {
 }
 
 /// STP
-pub fn OP_F2(this: *NES) void {
+fn OP_F2(this: *NES) void {
     OPTYPE.STP(this, 0xF2);
 }
 
 /// [M] ISC (d),y
-pub fn OP_F3(this: *NES) void {
+fn OP_F3(this: *NES) void {
     OPTYPE.IY_M(this);
     switch (this.timing) {
         else => {},
@@ -1675,12 +2086,12 @@ pub fn OP_F3(this: *NES) void {
 }
 
 /// [R] NOP d,x
-pub fn OP_F4(this: *NES) void {
+fn OP_F4(this: *NES) void {
     OPTYPE.DX_R(this);
 }
 
 /// [R] SBC d,x
-pub fn OP_F5(this: *NES) void {
+fn OP_F5(this: *NES) void {
     OPTYPE.DX_R(this);
     switch (this.timing) {
         else => {},
@@ -1689,7 +2100,7 @@ pub fn OP_F5(this: *NES) void {
 }
 
 /// [M] INC d,x
-pub fn OP_F6(this: *NES) void {
+fn OP_F6(this: *NES) void {
     OPTYPE.DX_M(this);
     switch (this.timing) {
         else => {},
@@ -1698,7 +2109,7 @@ pub fn OP_F6(this: *NES) void {
 }
 
 /// [M] ISC d,x
-pub fn OP_F7(this: *NES) void {
+fn OP_F7(this: *NES) void {
     OPTYPE.DX_M(this);
     switch (this.timing) {
         else => {},
@@ -1709,7 +2120,7 @@ pub fn OP_F7(this: *NES) void {
     }
 }
 
-pub fn OP_F8(this: *NES) void {
+fn OP_F8(this: *NES) void {
     OPTYPE.I(this);
     switch (this.timing) {
         else => {},
@@ -1725,14 +2136,14 @@ pub const opTable = [_]*const fn(*NES) void{
     OP_30, OP_31, OP_32, OP_33, OP_34, OP_35, OP_36, OP_37, OP_38, OP_39, OP_3A, OP_3B, OP_3C, OP_3D, OP_3E, OP_3F,
     OP_40, OP_41, OP_42, OP_43, OP_44, OP_45, OP_46, OP_47, OP_48, OP_49, OP_4A, OP_4B, OP_4C, OP_4D, OP_4E, OP_4F,
     OP_50, OP_51, OP_52, OP_53, OP_54, OP_55, OP_56, OP_57, OP_58, OP_59, OP_5A, OP_5B, OP_5C, OP_5D, OP_5E, OP_5F,
-    OP_60, OP_61, OP_62, OP_63, OP_64, OP_65, OP_66, OP_67, OP_68, OP_69, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_70, OP_71, OP_72, OP_73, OP_74, OP_75, OP_76, OP_77, OP_78, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_80, OP_81, OP_82, OP_83, OP_84, OP_85, OP_86, OP_87, OP_88, OP_89, OP_8A, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_90, OP_91, OP_92, OP_93, OP_94, OP_95, OP_96, OP_97, OP_98, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_60, OP_61, OP_62, OP_63, OP_64, OP_65, OP_66, OP_67, OP_68, OP_69, OP_6A, OP_6B, OP_6C, OP_6D, OP_6E, OP_6F,
+    OP_70, OP_71, OP_72, OP_73, OP_74, OP_75, OP_76, OP_77, OP_78, OP_79, OP_7A, OP_7B, OP_7C, OP_7D, OP_7E, OP_7F,
+    OP_80, OP_81, OP_82, OP_83, OP_84, OP_85, OP_86, OP_87, OP_88, OP_89, OP_8A, OP_8B, OP_8C, OP_8D, OP_8E, OP_8F,
+    OP_90, OP_91, OP_92, OP_93, OP_94, OP_95, OP_96, OP_97, OP_98, OP_99, OP_9A, OP_9B, OP_9C, OP_9D, OP_9E, OP_9F,
     OP_A0, OP_A1, OP_A2, OP_A3, OP_A4, OP_A5, OP_A6, OP_A7, OP_A8, OP_A9, OP_AA, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_B0, OP_B1, OP_B2, OP_B3, OP_B4, OP_B5, OP_B6, OP_B7, OP_B8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_B0, OP_B1, OP_B2, OP_B3, OP_B4, OP_B5, OP_B6, OP_B7, OP_B8, OP_B9, OP_BA, OP_BB, OP_BC, OP_BD, OP_BE, OP_BF,
     OP_C0, OP_C1, OP_C2, OP_C3, OP_C4, OP_C5, OP_C6, OP_C7, OP_C8, OP_C9, OP_CA, OP_02, OP_02, OP_02, OP_02, OP_02,
     OP_D0, OP_D1, OP_D2, OP_D3, OP_D4, OP_D5, OP_D6, OP_D7, OP_D8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_E0, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_E8, OP_E9, OP_EA, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_E0, OP_E1, OP_E2, OP_E3, OP_E4, OP_E5, OP_E6, OP_E7, OP_E8, OP_E9, OP_EA, OP_02, OP_02, OP_02, OP_02, OP_02,
     OP_F0, OP_F1, OP_F2, OP_F3, OP_F4, OP_F5, OP_F6, OP_F7, OP_F8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
 };

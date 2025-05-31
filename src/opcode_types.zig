@@ -18,20 +18,16 @@ pub fn BRK(this: *NES, brk: u1) void {
 
 /// accumulator / implied addressing
 pub fn I(this: *NES) void {
-    if (this.timing == 1) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(1);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => this.R_getROM(this.pc),
+        1 => this.R_getROMWithPC(),
     }
 }
 
 /// immediate addressing
 pub fn M(this: *NES) void {
-    if (this.timing == 1) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(1);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -40,9 +36,7 @@ pub fn M(this: *NES) void {
 
 /// absolute addressing, read
 pub fn A_R(this: *NES) void {
-    if (this.timing == 3) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(3);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
@@ -53,9 +47,7 @@ pub fn A_R(this: *NES) void {
 
 /// absolute addressing, rmw
 pub fn A_M(this: *NES) void {
-    if (this.timing == 5) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(5);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
@@ -69,9 +61,7 @@ pub fn A_M(this: *NES) void {
 /// absolute addressing, write
 /// NOTE: you must write manually
 pub fn A_W(this: *NES) void {
-    if (this.timing == 3) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(3);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
@@ -82,9 +72,7 @@ pub fn A_W(this: *NES) void {
 
 /// zero page addressing, read
 pub fn D_R(this: *NES) void {
-    if (this.timing == 2) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(2);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -94,9 +82,7 @@ pub fn D_R(this: *NES) void {
 
 /// zero page addressing, rmw
 pub fn D_M(this: *NES) void {
-    if (this.timing == 4) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(4);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -109,9 +95,7 @@ pub fn D_M(this: *NES) void {
 /// zero page addressing, write  
 /// NOTE: you must write manually
 pub fn D_W(this: *NES) void {
-    if (this.timing == 2) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(2);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -121,9 +105,7 @@ pub fn D_W(this: *NES) void {
 
 /// zero page indexed addressing, read
 pub fn DX_R(this: *NES) void {
-    if (this.timing == 3) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(3);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -134,9 +116,7 @@ pub fn DX_R(this: *NES) void {
 
 /// zero page indexed addressing, rmw
 pub fn DX_M(this: *NES) void {
-    if (this.timing == 5) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(5);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -150,9 +130,7 @@ pub fn DX_M(this: *NES) void {
 /// zero page indexed addressing, write
 /// NOTE: you must write manually
 pub fn DX_W(this: *NES) void {
-    if (this.timing == 3) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(3);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -163,9 +141,7 @@ pub fn DX_W(this: *NES) void {
 
 /// zero page indexed addressing, read
 pub fn DY_R(this: *NES) void {
-    if (this.timing == 3) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(3);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -176,9 +152,7 @@ pub fn DY_R(this: *NES) void {
 
 /// zero page indexed addressing, rmw
 pub fn DY_M(this: *NES) void {
-    if (this.timing == 5) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(5);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -192,9 +166,7 @@ pub fn DY_M(this: *NES) void {
 /// zero page indexed addressing, write
 /// NOTE: you must write manually
 pub fn DY_W(this: *NES) void {
-    if (this.timing == 3) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(3);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -205,9 +177,7 @@ pub fn DY_W(this: *NES) void {
 
 /// absolute indexed x addressing, read
 pub fn AX_R(this: *NES) void {
-    if (this.timing == 4) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(4);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
@@ -227,9 +197,7 @@ pub fn AX_R(this: *NES) void {
 
 /// absolute indexed x addressing, rmw
 pub fn AX_M(this: *NES) void {
-    if (this.timing == 6) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(6);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
@@ -244,9 +212,7 @@ pub fn AX_M(this: *NES) void {
 /// absolute indexed x addressing, write
 /// NOTE: you must write manually
 pub fn AX_W(this: *NES) void {
-    if (this.timing == 4) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(4);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
@@ -258,9 +224,7 @@ pub fn AX_W(this: *NES) void {
 
 /// absolute indexed y addressing, read
 pub fn AY_R(this: *NES) void {
-    if (this.timing == 4) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(4);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
@@ -280,9 +244,7 @@ pub fn AY_R(this: *NES) void {
 
 /// absolute indexed y addressing, rmw
 pub fn AY_M(this: *NES) void {
-    if (this.timing == 6) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(6);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
@@ -297,9 +259,7 @@ pub fn AY_M(this: *NES) void {
 /// absolute indexed y addressing, write
 /// NOTE: you must write manually
 pub fn AY_W(this: *NES) void {
-    if (this.timing == 4) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(4);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
@@ -311,9 +271,7 @@ pub fn AY_W(this: *NES) void {
 
 /// relative addressing (branches)
 pub fn RA(this: *NES, check: bool) void {
-    if (this.timing == 3) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(3);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => {
@@ -325,7 +283,7 @@ pub fn RA(this: *NES, check: bool) void {
             const pc_lo: u8 = @truncate(this.pc);
             const addr_lo: u8, this.add.flags.carry = @addWithOverflow(pc_lo, this.data);
             this.setPC(addr_lo, 0);
-            this.R_getROM(this.pc);
+            this.R_getROMWithPC();
             
             if (this.add.flags.carry != 0) return;
 
@@ -334,16 +292,14 @@ pub fn RA(this: *NES, check: bool) void {
         },
         3 => {
             this.setPC(@truncate((this.pc >> 8) + this.add.flags.carry), 1);
-            this.R_getROM(this.pc);
+            this.R_getROMWithPC();
         },
     }
 }
 
 /// indexed indirect addressing, read
 pub fn IX_R(this: *NES) void {
-    if (this.timing == 5) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(5);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -356,13 +312,11 @@ pub fn IX_R(this: *NES) void {
 
 /// indexed indirect addressing, rmw
 pub fn IX_M(this: *NES) void {
-    if (this.timing == 7) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(7);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_getROM(@intCast(this.data)); this.addData(this.x); },
+        2 => { this.R_getROMWithD(); this.addData(this.x); },
         3 => { this.R_setABIndirect(@intCast(this.data), 0); this.addData(1); },
         4 => { this.R_getROMWithAB(); this.R_setABIndirect(@intCast(this.data), 1); },
         5 => this.R_getROMWithAB(),
@@ -374,9 +328,7 @@ pub fn IX_M(this: *NES) void {
 /// indexed indirect addressing, write
 /// NOTE: you must write manually
 pub fn IX_W(this: *NES) void {
-    if (this.timing == 5) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(5);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -389,9 +341,7 @@ pub fn IX_W(this: *NES) void {
 
 /// indirect indexed addressing, read
 pub fn IY_R(this: *NES) void {
-    if (this.timing == 5) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(5);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -412,9 +362,7 @@ pub fn IY_R(this: *NES) void {
 
 /// indirect indexed addressing, rmw
 pub fn IY_M(this: *NES) void {
-    if (this.timing == 7) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(7);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
@@ -430,9 +378,7 @@ pub fn IY_M(this: *NES) void {
 /// indirect indexed addressing, write
 /// NOTE: you must write manually
 pub fn IY_W(this: *NES) void {
-    if (this.timing == 5) {
-        this.checkIRQ();
-    }
+    this.checkIRQ(5);
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),

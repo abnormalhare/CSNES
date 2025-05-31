@@ -172,6 +172,17 @@ pub fn ROR(this: *NES) void {
     this.p.flags.neg   = @intFromBool(this.data >= 0x80);
 }
 
+pub fn RORA(this: *NES) void {
+    const c: bool = (this.a & 1) == 1;
+
+    this.a >>= 1;
+    this.a = this.a + @as(u8, this.p.flags.carry) * 0x80;
+
+    this.p.flags.carry = @intFromBool(c);
+    this.p.flags.zero  = @intFromBool(this.a == 0x00);
+    this.p.flags.neg   = @intFromBool(this.a >= 0x80);
+}
+
 pub fn SBC(this: *NES) void {
     const a: u8 = this.a;
     
@@ -198,11 +209,25 @@ pub fn TAY(this: *NES) void {
     this.p.flags.neg   = @intFromBool(this.y >= 0x80);
 }
 
+pub fn TSX(this: *NES) void {
+    this.x = this.sp;
+
+    this.p.flags.zero  = @intFromBool(this.x == 0x00);
+    this.p.flags.neg   = @intFromBool(this.x >= 0x80);
+}
+
 pub fn TXA(this: *NES) void {
     this.a = this.x;
 
     this.p.flags.zero  = @intFromBool(this.a == 0x00);
     this.p.flags.neg   = @intFromBool(this.a >= 0x80);
+}
+
+pub fn TXS(this: *NES) void {
+    this.sp = this.x;
+
+    this.p.flags.zero  = @intFromBool(this.sp == 0x00);
+    this.p.flags.neg   = @intFromBool(this.sp >= 0x80);
 }
 
 pub fn TYA(this: *NES) void {

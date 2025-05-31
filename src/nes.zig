@@ -133,8 +133,8 @@ pub const NES = struct {
         std.debug.print("{s}| A:{X:0>2} X:{X:0>2} Y:{X:0>2} P:{X:0>2} | ", .{str, this.a, this.x, this.y, this.p.all});
 
         const sp: u16 = @as(u16, this.sp) + 0x100;
-        std.debug.print("ST:{X:0>2} {X:0>2} {X:0>2} {X:0>2} | RAM:{X:0>2} {X:0>2} {X:0>2} {X:0>2}\n PC: {X:0>2} | ", 
-        .{this.RAM[sp + 2], this.RAM[sp + 1], this.RAM[sp], this.RAM[sp - 1], this.RAM[0], this.RAM[0x1], this.RAM[2], this.RAM[3], this.pc});
+        std.debug.print("0x{X:0>2}:{X:0>2} {X:0>2} {X:0>2} {X:0>2} | RAM:{X:0>2} {X:0>2} {X:0>2} {X:0>2}\n PC: {X:0>2} | ", 
+        .{this.sp, this.RAM[sp + 2], this.RAM[sp + 1], this.RAM[sp], this.RAM[sp - 1], this.RAM[0], this.RAM[0x1], this.RAM[2], this.RAM[3], this.pc});
         this.cnt = 0;
     }
 
@@ -174,38 +174,46 @@ pub const NES = struct {
         this.timing = 0;
     }
 
-    pub fn checkIRQ(this: *NES) void {
-        this.p.flags.intd = @intFromBool(this.setI);
+    pub fn checkIRQ(this: *NES, time: u4) void {
+        if (this.timing == time) {
+            this.p.flags.intd = @intFromBool(this.setI);
+        }
     }
 
     // R/W WRAPPER FUNCTIONS //
-    pub fn R_getROM(this: *NES, index: u16) void {
+
+    /// sets data to the value at the given address
+    fn R_getROM(this: *NES, index: u16) void {
         this.data = read(this, index);
     }
 
-    pub fn R_getOpcode(this: *NES, index: u16) void {
+    /// sets both data and ir to the value at the given address
+    fn R_getOpcode(this: *NES, index: u16) void {
         this.data = read(this, index);
         this.ir = this.data;
     }
 
+    /// reads the value at PC and increments PC by 1
     pub fn R_readROM(this: *NES) void {
         this.R_getROM(this.pc);
         this.pc, _ = @addWithOverflow(this.pc, 1);
         this.prtOp();
     }
 
-    pub fn R_readOpcode(this: *NES) void {
-        this.R_getOpcode(this.pc);
-        this.pc, _ = @addWithOverflow(this.pc, 1);
-    }
-
+    /// sets data to the value at address pins
     pub fn R_getROMWithAB(this: *NES) void {
         this.R_getROM(this.ab.full);
     }
 
+    /// puts the current data into the lower address and gets data using only that
     pub fn R_getROMWithD(this: *NES) void {
         this.ab.half.low = this.data;
         this.R_getROM(this.ab.half.low);
+    }
+
+    /// basic instruction for read calls that do not increment the PC
+    pub fn R_getROMWithPC(this: *NES) void {
+        this.R_getROM(this.pc);
     }
 
     pub fn W_setROM(this: *NES, index: u16, data: u8) void {
