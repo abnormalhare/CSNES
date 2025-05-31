@@ -1,5 +1,16 @@
 const NES = @import("nes.zig").NES;
 
+pub fn ADC(this: *NES) void {
+    const a: u8 = this.a;
+    this.a, const c: u1 = @addWithOverflow(this.a, this.data);
+    this.a += this.p.flags.carry;
+
+    this.p.flags.carry = c;
+    this.p.flags.zero = @intFromBool(this.a == 0x00);
+    this.p.flags.over = @intFromBool(((this.a ^ a) & (this.a ^ this.data) & 0x80) == 0x80);
+    this.p.flags.neg  = @intFromBool(this.a >= 0x80);
+}
+
 pub fn AND(this: *NES) void {
     this.a &= this.data;
 
@@ -110,4 +121,29 @@ pub fn ROLA(this: *NES) void {
     this.p.flags.carry = @intFromBool(c);
     this.p.flags.zero  = @intFromBool(this.a == 0x00);
     this.p.flags.neg   = @intFromBool(this.a >= 0x80);
+}
+
+pub fn ROR(this: *NES) void {
+    const c: bool = (this.data & 1) == 1;
+
+    this.data >>= 1;
+    this.data = this.data + @as(u8, this.p.flags.carry) * 0x80;
+
+    this.p.flags.carry = @intFromBool(c);
+    this.p.flags.zero  = @intFromBool(this.data == 0x00);
+    this.p.flags.neg   = @intFromBool(this.data >= 0x80);
+}
+
+pub fn TAX(this: *NES) void {
+    this.x = this.a;
+
+    this.p.flags.zero  = @intFromBool(this.data == 0x00);
+    this.p.flags.neg   = @intFromBool(this.data >= 0x80);
+}
+
+pub fn TAY(this: *NES) void {
+    this.y = this.a;
+
+    this.p.flags.zero  = @intFromBool(this.data == 0x00);
+    this.p.flags.neg   = @intFromBool(this.data >= 0x80);
 }

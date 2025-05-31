@@ -104,5 +104,5 @@ pub fn main() !void {
             updateSDL(screen, videoPitch);
         }
     }
-    std.debug.print("ERROR: NES jammed: 0x{X}", .{nes.jam});
+    std.debug.print("[ ERROR: NES jammed: 0x{X} ]", .{nes.jam});
 }

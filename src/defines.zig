@@ -87,8 +87,8 @@ pub const PPU = struct {
 pub const addr_bus = extern union {
     full: u16,
     half: extern struct {
-        high: u8,
         low: u8,
+        high: u8,
     },
 };
 

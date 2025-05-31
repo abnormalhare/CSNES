@@ -41,6 +41,9 @@ pub const NES = struct {
     cycleCount: u64,
     jam: u8,
 
+    // debug info
+    cnt: u2,
+
     // INITIALIZATION FUNCTIONS //
     fn loadRegs(this: *NES) void {
         this.a = 0;
@@ -55,7 +58,9 @@ pub const NES = struct {
         this.timing = 0;
         
         this.p.all = 0b00100100;
+
         this.setI = false;
+        this.irq = 0;
 
         this.RAM = [_]u8{0} ** 0x800;
         this.SRAM = [_]u8{0} ** 0x2000;
@@ -118,10 +123,21 @@ pub const NES = struct {
         return nes;
     }
 
+    fn prtEnd(this: *NES) void {
+        const str: []const u8 = switch (this.cnt) {
+            0 => "                 ",
+            1 => "            ",
+            2 => "       ",
+            3 => "  ",
+        };
+        std.debug.print("{s}| A:{X:0>2} X:{X:0>2} Y:{X:0>2} P:{X:0>2}\n PC: {X:0>2} | ", .{str, this.a, this.x, this.y, this.p.all, this.pc});
+        this.cnt = 0;
+    }
+
     pub fn run(this: *NES) void {
         switch (this.timing) {
             0 => {
-                std.debug.print("\n PC: {X:0>2} | ", .{this.pc});
+                this.prtEnd();
                 this.ab.full = this.pc;
                 this.pc += 1;
                 this.R_getROMWithAB();
@@ -129,13 +145,13 @@ pub const NES = struct {
                 this.ir = this.data;
             },
             else => {
-                if (this.p.flags.intd) {
+                if (this.p.flags.intd == 0 and this.irq == 1) {
                     opTable[0x00](this);
                     return;
                 }
 
                 opTable[this.ir](this);
-                
+
                 if (this.timing == 0) this.run();
             }
         }
@@ -143,6 +159,7 @@ pub const NES = struct {
 
     fn prtOp(this: *NES) void {
         std.debug.print("0x{X:0>2} ", .{this.data});
+        this.cnt += 1;
     }
 
     pub fn resetTiming(this: *NES) void {
@@ -150,7 +167,7 @@ pub const NES = struct {
     }
 
     pub fn checkIRQ(this: *NES) void {
-        this.p.flags.intd = this.setI;
+        this.p.flags.intd = @intFromBool(this.setI);
     }
 
     // R/W WRAPPER FUNCTIONS //
@@ -195,12 +212,20 @@ pub const NES = struct {
         this.W_setROM(this.ab.half.low, this.data);
     }
 
+    pub fn W_writeROMV(this: *NES, data: u8) void {
+        this.W_setROM(this.ab.full, data);
+    }
+
+    pub fn W_writeROMVD(this: *NES, data: u8) void {
+        this.W_setROM(this.ab.half.low, data);
+    }
+
     pub fn W_push(this: *NES, data: u8) void {
         write(this, 0x100 + @as(u16, this.sp), data);
         this.sp, _ = @subWithOverflow(this.sp, 1);
     }
 
-    pub fn W_pop(this: *NES) u8 {
+    pub fn R_pop(this: *NES) u8 {
         this.sp, _ = @addWithOverflow(this.sp, 1);
         return read(this, 0x100 + @as(u16, this.sp));
     }
@@ -208,10 +233,10 @@ pub const NES = struct {
     pub fn setPC(this: *NES, data: u8, stage: u1) void {
         switch (stage) {
             0 => {
-                this.pcs.half.high = data;
+                this.pcs.half.low = data;
             },
             1 => {
-                this.pcs.half.low = data;
+                this.pcs.half.high = data;
                 this.pc = this.pcs.full;
             }
         }
@@ -220,10 +245,10 @@ pub const NES = struct {
     pub fn setAB(this: *NES, data: u8, stage: u1) void {
         switch (stage) {
             0 => {
-                this.ab.half.high = data;
+                this.ab.half.low = data;
             },
             1 => {
-                this.ab.half.low = data;
+                this.ab.half.high = data;
             }
         }
     }

@@ -88,7 +88,7 @@ pub fn D_M(this: *NES) void {
     }
 }
 
-/// zero page addressing, write
+/// zero page addressing, write  
 /// NOTE: you must write manually
 pub fn D_W(this: *NES) void {
     switch (this.timing) {
@@ -140,7 +140,7 @@ pub fn AX_R(this: *NES) void {
         3 => {
             this.R_getROMWithAB();
             if (this.add.flags.carry == 0) {
-                this.timing = 0xF;
+                this.timing = 0xE;
                 return;
             }
 
@@ -184,7 +184,7 @@ pub fn AY_R(this: *NES) void {
         3 => {
             this.R_getROMWithAB();
             if (this.add.flags.carry == 0) {
-                this.timing = 0xF;
+                this.timing = 0xE;
                 return;
             }
 
@@ -226,21 +226,21 @@ pub fn RA(this: *NES, check: bool) void {
         1 => {
             this.R_readROM();
             
-            if (!check) { this.timing = 0xF; }
+            if (!check) { this.timing = 0xE; }
         },
         2 => {
             this.R_getROM(this.pc);
             
             const pc_lo: u8 = @truncate(this.pc);
             const addr_lo: u8, this.add.flags.carry = @addWithOverflow(pc_lo, this.data);
-            this.setPC(addr_lo, 1);
+            this.setPC(addr_lo, 0);
             
-            if (this.add.flags.carry == 0) { this.timing = 0xF; }
+            if (this.add.flags.carry == 0) { this.timing = 0xE; }
         },
         3 => {
             this.R_getROM(this.pc);
             
-            this.setPC(@truncate((this.pc >> 8) + this.add.flags.carry), 0);
+            this.setPC(@truncate((this.pc >> 8) + this.add.flags.carry), 1);
         },
     }
 }
@@ -294,7 +294,7 @@ pub fn IY_R(this: *NES) void {
         4 => {
             this.R_getROMWithAB();
             if (this.add.flags.carry == 0) {
-                this.timing = 0xF;
+                this.timing = 0xE;
                 return;
             }
 
