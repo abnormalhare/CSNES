@@ -596,7 +596,7 @@ fn OP_40(this: *NES) void {
         else => this.resetTiming(),
         1 => this.R_getROMWithPC(),
         2 => {},
-        3 => { const fuckYouZig: u8 = 0x20; this.p.all = this.R_pop() & ~fuckYouZig; },
+        3 => { const fuckYouZig: u8 = 0x30; this.p.all = (this.p.all & fuckYouZig) | (this.R_pop() & ~fuckYouZig); },
         4 => this.setPC(this.R_pop(), 0),
         5 => this.setPC(this.R_pop(), 1),
     }
