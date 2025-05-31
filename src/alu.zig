@@ -187,13 +187,27 @@ pub fn SBC(this: *NES) void {
 pub fn TAX(this: *NES) void {
     this.x = this.a;
 
-    this.p.flags.zero  = @intFromBool(this.data == 0x00);
-    this.p.flags.neg   = @intFromBool(this.data >= 0x80);
+    this.p.flags.zero  = @intFromBool(this.x == 0x00);
+    this.p.flags.neg   = @intFromBool(this.x >= 0x80);
 }
 
 pub fn TAY(this: *NES) void {
     this.y = this.a;
 
-    this.p.flags.zero  = @intFromBool(this.data == 0x00);
-    this.p.flags.neg   = @intFromBool(this.data >= 0x80);
+    this.p.flags.zero  = @intFromBool(this.y == 0x00);
+    this.p.flags.neg   = @intFromBool(this.y >= 0x80);
+}
+
+pub fn TXA(this: *NES) void {
+    this.a = this.x;
+
+    this.p.flags.zero  = @intFromBool(this.a == 0x00);
+    this.p.flags.neg   = @intFromBool(this.a >= 0x80);
+}
+
+pub fn TYA(this: *NES) void {
+    this.a = this.y;
+
+    this.p.flags.zero  = @intFromBool(this.a == 0x00);
+    this.p.flags.neg   = @intFromBool(this.a >= 0x80);
 }

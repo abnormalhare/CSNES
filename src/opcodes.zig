@@ -1125,13 +1125,27 @@ pub fn OP_87(this: *NES) void {
 /// DEY
 pub fn OP_88(this: *NES) void {
     switch (this.timing) {
-        else => {},
+        else => this.resetTiming(),
         1 => {
-            this.y -= 1;
+            this.y, _ = @subWithOverflow(this.y, 1);
 
             this.p.flags.zero = @intFromBool(this.y == 0x00);
             this.p.flags.neg  = @intFromBool(this.y >= 0x80);
         },
+    }
+}
+
+/// NOP #i
+pub fn OP_89(this: *NES) void {
+    OPTYPE.M(this);
+}
+
+/// TXA
+pub fn OP_8A(this: *NES) void {
+    OPTYPE.I(this);
+    switch (this.timing) {
+        else => {},
+        1 => ALU.TXA(this),
     }
 }
 
@@ -1153,6 +1167,64 @@ pub fn OP_91(this: *NES) void {
 /// STP
 pub fn OP_92(this: *NES) void {
     OPTYPE.STP(this, 0x92);
+}
+
+/// [M] SHA (d),y
+pub fn OP_93(this: *NES) void {
+    OPTYPE.IY_M(this);
+    switch (this.timing) {
+        else => {},
+        6 => {
+            var pc: u8 = @truncate(this.pc >> 8);
+            pc, _ = @addWithOverflow(pc, 1);
+            this.W_writeROMVD(this.a & this.x & pc);
+        },
+    }
+}
+
+/// [W] STY d,x
+pub fn OP_94(this: *NES) void {
+    OPTYPE.DX_W(this);
+    switch (this.timing) {
+        else => {},
+        3 => this.W_writeROMVD(this.y),
+    }
+}
+
+/// [W] STA d,x
+pub fn OP_95(this: *NES) void {
+    OPTYPE.DX_W(this);
+    switch (this.timing) {
+        else => {},
+        3 => this.W_writeROMVD(this.a),
+    }
+}
+
+/// [W] STX d,y
+pub fn OP_96(this: *NES) void {
+    OPTYPE.DY_W(this);
+    switch (this.timing) {
+        else => {},
+        3 => this.W_writeROMVD(this.x),
+    }
+}
+
+/// [W] SAX d,y
+pub fn OP_97(this: *NES) void {
+    OPTYPE.DY_W(this);
+    switch (this.timing) {
+        else => {},
+        3 => this.W_writeROMVD(this.a & this.x),
+    }
+}
+
+/// TYA
+pub fn OP_98(this: *NES) void {
+    OPTYPE.I(this);
+    switch (this.timing) {
+        else => {},
+        1 => ALU.TYA(this),
+    }
 }
 
 // ...
@@ -1235,7 +1307,7 @@ pub fn OP_A7(this: *NES) void {
     }
 }
 
-/// [R] TAY
+/// TAY
 pub fn OP_A8(this: *NES) void {
     OPTYPE.I(this);
     switch (this.timing) {
@@ -1250,6 +1322,14 @@ pub fn OP_A9(this: *NES) void {
     switch (this.timing) {
         else => {},
         1 => ALU.LDA(this),
+    }
+}
+
+/// TAX
+pub fn OP_AA(this: *NES) void {
+    switch (this.timing) {
+        else => this.resetTiming(),
+        1 => ALU.TAX(this),
     }
 }
 
@@ -1415,7 +1495,7 @@ pub fn OP_C8(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => {
-            this.y += 1;
+            this.y, _ = @addWithOverflow(this.y, 1);
 
             this.p.flags.zero = @intFromBool(this.y == 0);
             this.p.flags.neg  = @intFromBool(this.y >= 0);
@@ -1435,9 +1515,9 @@ pub fn OP_C9(this: *NES) void {
 /// DEX
 pub fn OP_CA(this: *NES) void {
     switch (this.timing) {
-        else => {},
+        else => this.resetTiming(),
         1 => {
-            this.x -= 1;
+            this.x, _ = @subWithOverflow(this.x, 1);
 
             this.p.flags.zero = @intFromBool(this.x == 0x00);
             this.p.flags.neg  = @intFromBool(this.x >= 0x80);
@@ -1538,7 +1618,7 @@ pub fn OP_E8(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => {
-            this.x += 1;
+            this.x, _ = @addWithOverflow(this.x, 1);
 
             this.p.flags.zero = @intFromBool(this.x == 0);
             this.p.flags.neg  = @intFromBool(this.x >= 0);
@@ -1647,9 +1727,9 @@ pub const opTable = [_]*const fn(*NES) void{
     OP_50, OP_51, OP_52, OP_53, OP_54, OP_55, OP_56, OP_57, OP_58, OP_59, OP_5A, OP_5B, OP_5C, OP_5D, OP_5E, OP_5F,
     OP_60, OP_61, OP_62, OP_63, OP_64, OP_65, OP_66, OP_67, OP_68, OP_69, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
     OP_70, OP_71, OP_72, OP_73, OP_74, OP_75, OP_76, OP_77, OP_78, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_80, OP_81, OP_82, OP_83, OP_84, OP_85, OP_86, OP_87, OP_88, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_90, OP_91, OP_92, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_A0, OP_A1, OP_A2, OP_A3, OP_A4, OP_A5, OP_A6, OP_A7, OP_A8, OP_A9, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_80, OP_81, OP_82, OP_83, OP_84, OP_85, OP_86, OP_87, OP_88, OP_89, OP_8A, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_90, OP_91, OP_92, OP_93, OP_94, OP_95, OP_96, OP_97, OP_98, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_A0, OP_A1, OP_A2, OP_A3, OP_A4, OP_A5, OP_A6, OP_A7, OP_A8, OP_A9, OP_AA, OP_02, OP_02, OP_02, OP_02, OP_02,
     OP_B0, OP_B1, OP_B2, OP_B3, OP_B4, OP_B5, OP_B6, OP_B7, OP_B8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
     OP_C0, OP_C1, OP_C2, OP_C3, OP_C4, OP_C5, OP_C6, OP_C7, OP_C8, OP_C9, OP_CA, OP_02, OP_02, OP_02, OP_02, OP_02,
     OP_D0, OP_D1, OP_D2, OP_D3, OP_D4, OP_D5, OP_D6, OP_D7, OP_D8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
