@@ -134,7 +134,7 @@ pub const NES = struct {
 
         const sp: u16 = @as(u16, this.sp) + 0x100;
         std.debug.print("ST:{X:0>2} {X:0>2} {X:0>2} {X:0>2} | RAM:{X:0>2} {X:0>2} {X:0>2} {X:0>2}\n PC: {X:0>2} | ", 
-        .{this.RAM[sp - 2], this.RAM[sp - 1], this.RAM[sp], this.RAM[sp + 1], this.RAM[0], this.RAM[0x1], this.RAM[2], this.RAM[3], this.pc});
+        .{this.RAM[sp + 2], this.RAM[sp + 1], this.RAM[sp], this.RAM[sp - 1], this.RAM[0], this.RAM[0x1], this.RAM[2], this.RAM[3], this.pc});
         this.cnt = 0;
     }
 

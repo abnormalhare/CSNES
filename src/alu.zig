@@ -54,6 +54,22 @@ pub fn CMP(this: *NES) void {
     this.p.flags.neg   = @intFromBool(res >= 0x80);
 }
 
+pub fn CPX(this: *NES) void {
+    const res: u8, _ = @subWithOverflow(this.x, this.data);
+
+    this.p.flags.carry = @intFromBool(this.x >= this.data);
+    this.p.flags.zero  = @intFromBool(this.x == this.data);
+    this.p.flags.neg   = @intFromBool(res >= 0x80);
+}
+
+pub fn CPY(this: *NES) void {
+    const res: u8, _ = @subWithOverflow(this.y, this.data);
+
+    this.p.flags.carry = @intFromBool(this.y >= this.data);
+    this.p.flags.zero  = @intFromBool(this.y == this.data);
+    this.p.flags.neg   = @intFromBool(res >= 0x80);
+}
+
 pub fn DEC(this: *NES) void {
     this.data -= 1;
 

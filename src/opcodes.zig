@@ -293,7 +293,7 @@ pub fn OP_20(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => this.setPC(this.data + 1, 0),
+        2 => this.setPC(this.data, 0),
         3 => this.W_push(@truncate(this.pc >> 8)),
         4 => this.W_push(@truncate(this.pc >> 0)),
         5 => {
@@ -1063,6 +1063,29 @@ pub fn OP_80(this: *NES) void {
     OPTYPE.M(this);
 }
 
+/// [R] STA (d,x)
+pub fn OP_81(this: *NES) void {
+    OPTYPE.IX_W(this);
+    switch (this.timing) {
+        else => {},
+        5 => this.W_writeROMVD(this.a),
+    }
+}
+
+/// [R] NOP #i
+pub fn OP_82(this: *NES) void {
+    OPTYPE.M(this);
+}
+
+/// [W] STA (d,x)
+pub fn OP_83(this: *NES) void {
+    OPTYPE.IX_W(this);
+    switch (this.timing) {
+        else => {},
+        5 => this.W_writeROMVD(this.a & this.x),
+    }
+}
+
 /// [W] STY d
 pub fn OP_84(this: *NES) void {
     OPTYPE.D_W(this);
@@ -1090,9 +1113,41 @@ pub fn OP_86(this: *NES) void {
     }
 }
 
+/// [W] SAX d
+pub fn OP_87(this: *NES) void {
+    OPTYPE.D_W(this);
+    switch (this.timing) {
+        else => {},
+        2 => this.W_writeROMVD(this.a & this.x),
+    }
+}
+
+/// DEY
+pub fn OP_88(this: *NES) void {
+    switch (this.timing) {
+        else => {},
+        1 => {
+            this.y -= 1;
+
+            this.p.flags.zero = @intFromBool(this.y == 0x00);
+            this.p.flags.neg  = @intFromBool(this.y >= 0x80);
+        },
+    }
+}
+
 /// BCC
 pub fn OP_90(this: *NES) void {
     OPTYPE.RA(this, this.p.flags.carry == 0);
+}
+
+/// [R] STA (d),y
+pub fn OP_91(this: *NES) void {
+    OPTYPE.IY_R(this);
+    switch (this.timing) {
+        else => {},
+        4 => if (this.add.flags.carry == 0) { this.W_writeROMVD(this.a); },
+        5 => this.W_writeROMVD(this.a),
+    }
 }
 
 /// STP
@@ -1281,11 +1336,112 @@ pub fn OP_B8(this: *NES) void {
 
 //...
 
+/// CPY #i
+pub fn OP_C0(this: *NES) void {
+    OPTYPE.M(this);
+    switch (this.timing) {
+        else => {},
+        1 => ALU.CPY(this),
+    }
+}
+
+/// [R] CMP (d,x)
+pub fn OP_C1(this: *NES) void {
+    OPTYPE.IX_R(this);
+    switch (this.timing) {
+        else => {},
+        5 => ALU.CMP(this),
+    }
+}
+
+/// [R] NOP #i
+pub fn OP_C2(this: *NES) void {
+    OPTYPE.M(this);
+}
+
+/// [R] DCP (d,x)
+pub fn OP_C3(this: *NES) void {
+    OPTYPE.IX_R(this);
+    switch (this.timing) {
+        else => {},
+        5 => {
+            ALU.DEC(this);
+            ALU.CMP(this);
+        },
+    }
+}
+
+/// [R] CPY d
+pub fn OP_C4(this: *NES) void {
+    OPTYPE.D_R(this);
+    switch (this.timing) {
+        else => {},
+        2 => ALU.CPY(this),
+    }
+}
+
+/// [R] CMP d
+pub fn OP_C5(this: *NES) void {
+    OPTYPE.D_R(this);
+    switch (this.timing) {
+        else => {},
+        2 => ALU.CMP(this),
+    }
+}
+
+/// [M] DEC d
+pub fn OP_C6(this: *NES) void {
+    OPTYPE.D_M(this);
+    switch (this.timing) {
+        else => {},
+        3 => ALU.DEC(this),
+    }
+}
+
+/// [M] DCP d
+pub fn OP_C7(this: *NES) void {
+    OPTYPE.D_M(this);
+    switch (this.timing) {
+        else => {},
+        3 => {
+            ALU.DEC(this);
+            ALU.CMP(this);
+        },
+    }
+}
+
+/// INY
+pub fn OP_C8(this: *NES) void {
+    switch (this.timing) {
+        else => this.resetTiming(),
+        1 => {
+            this.y += 1;
+
+            this.p.flags.zero = @intFromBool(this.y == 0);
+            this.p.flags.neg  = @intFromBool(this.y >= 0);
+        },
+    }
+}
+
+/// [R] CMP #i
 pub fn OP_C9(this: *NES) void {
     OPTYPE.M(this);
     switch (this.timing) {
         else => {},
         1 => ALU.CMP(this),
+    }
+}
+
+/// DEX
+pub fn OP_CA(this: *NES) void {
+    switch (this.timing) {
+        else => {},
+        1 => {
+            this.x -= 1;
+
+            this.p.flags.zero = @intFromBool(this.x == 0x00);
+            this.p.flags.neg  = @intFromBool(this.x >= 0x80);
+        },
     }
 }
 
@@ -1367,6 +1523,37 @@ pub fn OP_D8(this: *NES) void {
 }
 
 //...
+
+/// CPX #i
+pub fn OP_E0(this: *NES) void {
+    OPTYPE.M(this);
+    switch (this.timing) {
+        else => {},
+        1 => ALU.CPX(this),
+    }
+}
+
+/// INX
+pub fn OP_E8(this: *NES) void {
+    switch (this.timing) {
+        else => this.resetTiming(),
+        1 => {
+            this.x += 1;
+
+            this.p.flags.zero = @intFromBool(this.x == 0);
+            this.p.flags.neg  = @intFromBool(this.x >= 0);
+        },
+    }
+}
+
+/// SBC #i
+pub fn OP_E9(this: *NES) void {
+    OPTYPE.M(this);
+    switch (this.timing) {
+        else => {},
+        1 => ALU.SBC(this),
+    }
+}
 
 /// NOP
 pub fn OP_EA(this: *NES) void {
@@ -1460,12 +1647,12 @@ pub const opTable = [_]*const fn(*NES) void{
     OP_50, OP_51, OP_52, OP_53, OP_54, OP_55, OP_56, OP_57, OP_58, OP_59, OP_5A, OP_5B, OP_5C, OP_5D, OP_5E, OP_5F,
     OP_60, OP_61, OP_62, OP_63, OP_64, OP_65, OP_66, OP_67, OP_68, OP_69, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
     OP_70, OP_71, OP_72, OP_73, OP_74, OP_75, OP_76, OP_77, OP_78, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_80, OP_02, OP_02, OP_02, OP_84, OP_85, OP_86, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_90, OP_02, OP_92, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_80, OP_81, OP_82, OP_83, OP_84, OP_85, OP_86, OP_87, OP_88, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_90, OP_91, OP_92, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
     OP_A0, OP_A1, OP_A2, OP_A3, OP_A4, OP_A5, OP_A6, OP_A7, OP_A8, OP_A9, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
     OP_B0, OP_B1, OP_B2, OP_B3, OP_B4, OP_B5, OP_B6, OP_B7, OP_B8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_C9, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_C0, OP_C1, OP_C2, OP_C3, OP_C4, OP_C5, OP_C6, OP_C7, OP_C8, OP_C9, OP_CA, OP_02, OP_02, OP_02, OP_02, OP_02,
     OP_D0, OP_D1, OP_D2, OP_D3, OP_D4, OP_D5, OP_D6, OP_D7, OP_D8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_EA, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_E0, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_E8, OP_E9, OP_EA, OP_02, OP_02, OP_02, OP_02, OP_02,
     OP_F0, OP_F1, OP_F2, OP_F3, OP_F4, OP_F5, OP_F6, OP_F7, OP_F8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
 };
