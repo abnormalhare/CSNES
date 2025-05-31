@@ -53,6 +53,13 @@ pub fn BIT(this: *NES) void {
     this.p.flags.neg  = @intFromBool(bit >= 0x80);
 }
 
+pub fn INC(this: *NES) void {
+    this.data += 1;
+
+    this.p.flags.zero = @intFromBool(this.data == 0x00);
+    this.p.flags.neg  = @intFromBool(this.data >= 0x80);
+}
+
 pub fn LDA(this: *NES) void {
     this.a = this.data;
 
@@ -132,6 +139,18 @@ pub fn ROR(this: *NES) void {
     this.p.flags.carry = @intFromBool(c);
     this.p.flags.zero  = @intFromBool(this.data == 0x00);
     this.p.flags.neg   = @intFromBool(this.data >= 0x80);
+}
+
+pub fn SBC(this: *NES) void {
+    const a: u8 = this.a;
+    const c: u1 = this.p.flags.carry;
+    
+    this.a, this.p.flags.carry = @subWithOverflow(this.a, this.data);
+    this.a -= c;
+
+    this.p.flags.zero = @intFromBool(this.a == 0x00);
+    this.p.flags.over = @intFromBool(((this.a ^ a) & (this.a ^ ~this.data) & 0x80) == 0x80);
+    this.p.flags.neg  = @intFromBool(this.a >= 0x80);
 }
 
 pub fn TAX(this: *NES) void {

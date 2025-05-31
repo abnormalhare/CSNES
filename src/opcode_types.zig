@@ -229,18 +229,19 @@ pub fn RA(this: *NES, check: bool) void {
             if (!check) { this.timing = 0xE; }
         },
         2 => {
-            this.R_getROM(this.pc);
-            
             const pc_lo: u8 = @truncate(this.pc);
             const addr_lo: u8, this.add.flags.carry = @addWithOverflow(pc_lo, this.data);
             this.setPC(addr_lo, 0);
-            
-            if (this.add.flags.carry == 0) { this.timing = 0xE; }
-        },
-        3 => {
             this.R_getROM(this.pc);
             
+            if (this.add.flags.carry != 0) return;
+
+            this.setPC(@truncate((this.pc >> 8)), 1);
+            this.timing = 0xE;
+        },
+        3 => {
             this.setPC(@truncate((this.pc >> 8) + this.add.flags.carry), 1);
+            this.R_getROM(this.pc);
         },
     }
 }

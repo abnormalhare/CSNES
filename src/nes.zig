@@ -59,8 +59,8 @@ pub const NES = struct {
         
         this.p.all = 0b00100100;
 
-        this.setI = false;
-        this.irq = 0;
+        this.setI = true;
+        this.irq = 1;
 
         this.RAM = [_]u8{0} ** 0x800;
         this.SRAM = [_]u8{0} ** 0x2000;
@@ -130,7 +130,9 @@ pub const NES = struct {
             2 => "       ",
             3 => "  ",
         };
-        std.debug.print("{s}| A:{X:0>2} X:{X:0>2} Y:{X:0>2} P:{X:0>2}\n PC: {X:0>2} | ", .{str, this.a, this.x, this.y, this.p.all, this.pc});
+        std.debug.print("{s}| A:{X:0>2} X:{X:0>2} Y:{X:0>2} P:{X:0>2} | ", .{str, this.a, this.x, this.y, this.p.all});
+        std.debug.print("ST:{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}\n PC: {X:0>2} | ", 
+        .{this.RAM[0x1FF], this.RAM[0x1FE], this.RAM[0x1FD], this.RAM[0x1FC], this.RAM[0x1FB], this.RAM[0x1FA], this.RAM[0x1F9], this.RAM[0x1F8], this.pc});
         this.cnt = 0;
     }
 
