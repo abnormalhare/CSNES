@@ -71,7 +71,7 @@ pub fn CPY(this: *NES) void {
 }
 
 pub fn DEC(this: *NES) void {
-    this.data -= 1;
+    this.data, _ = @subWithOverflow(this.data, 1);
 
     this.p.flags.zero = @intFromBool(this.data == 0x00);
     this.p.flags.neg  = @intFromBool(this.data >= 0x80);
@@ -85,7 +85,7 @@ pub fn EOR(this: *NES) void {
 }
 
 pub fn INC(this: *NES) void {
-    this.data += 1;
+    this.data, _ = @addWithOverflow(this.data, 1);
 
     this.p.flags.zero = @intFromBool(this.data == 0x00);
     this.p.flags.neg  = @intFromBool(this.data >= 0x80);
@@ -138,8 +138,7 @@ pub fn ORA(this: *NES) void {
 }
 
 pub fn ROL(this: *NES) void {
-    const i: i8 = @intCast(this.data);
-    const c: bool = i < 0;
+    const c: bool = this.data >= 0x80;
 
     this.data <<= 1;
     this.data += this.p.flags.carry;
@@ -150,8 +149,7 @@ pub fn ROL(this: *NES) void {
 }
 
 pub fn ROLA(this: *NES) void {
-    const i: i8 = @intCast(this.data);
-    const c: bool = i < 0;
+    const c: bool = this.data >= 0x80;
 
     this.a <<= 1;
     this.a += this.p.flags.carry;

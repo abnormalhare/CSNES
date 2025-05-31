@@ -597,8 +597,8 @@ fn OP_40(this: *NES) void {
         1 => this.R_getROMWithPC(),
         2 => {},
         3 => { const fuckYouZig: u8 = 0x20; this.p.all = this.R_pop() & ~fuckYouZig; },
-        4 => this.setPC(this.R_pop(), 1),
-        5 => this.setPC(this.R_pop(), 0),
+        4 => this.setPC(this.R_pop(), 0),
+        5 => this.setPC(this.R_pop(), 1),
     }
 }
 
@@ -1599,6 +1599,57 @@ fn OP_AA(this: *NES) void {
     }
 }
 
+/// [R] LAX #i
+fn OP_AB(this: *NES) void {
+    OPTYPE.M(this);
+    switch (this.timing) {
+        else => {},
+        1 => {
+            ALU.LDA(this);
+            ALU.TAX(this);
+        },
+    }
+}
+
+/// [R] LDY a
+fn OP_AC(this: *NES) void {
+    OPTYPE.A_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => ALU.LDY(this),
+    }
+}
+
+/// [R] LDA a
+fn OP_AD(this: *NES) void {
+    OPTYPE.A_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => ALU.LDA(this),
+    }
+}
+
+/// [R] LDX a
+fn OP_AE(this: *NES) void {
+    OPTYPE.A_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => ALU.LDX(this),
+    }
+}
+
+/// [R] LAX a
+fn OP_AF(this: *NES) void {
+    OPTYPE.A_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => {
+            ALU.LDA(this);
+            ALU.TAX(this);
+        },
+    }
+}
+
 /// BCS
 fn OP_B0(this: *NES) void {
     OPTYPE.RA(this, this.p.flags.carry == 1);
@@ -2140,7 +2191,7 @@ pub const opTable = [_]*const fn(*NES) void{
     OP_70, OP_71, OP_72, OP_73, OP_74, OP_75, OP_76, OP_77, OP_78, OP_79, OP_7A, OP_7B, OP_7C, OP_7D, OP_7E, OP_7F,
     OP_80, OP_81, OP_82, OP_83, OP_84, OP_85, OP_86, OP_87, OP_88, OP_89, OP_8A, OP_8B, OP_8C, OP_8D, OP_8E, OP_8F,
     OP_90, OP_91, OP_92, OP_93, OP_94, OP_95, OP_96, OP_97, OP_98, OP_99, OP_9A, OP_9B, OP_9C, OP_9D, OP_9E, OP_9F,
-    OP_A0, OP_A1, OP_A2, OP_A3, OP_A4, OP_A5, OP_A6, OP_A7, OP_A8, OP_A9, OP_AA, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_A0, OP_A1, OP_A2, OP_A3, OP_A4, OP_A5, OP_A6, OP_A7, OP_A8, OP_A9, OP_AA, OP_AB, OP_AC, OP_AD, OP_AE, OP_AF,
     OP_B0, OP_B1, OP_B2, OP_B3, OP_B4, OP_B5, OP_B6, OP_B7, OP_B8, OP_B9, OP_BA, OP_BB, OP_BC, OP_BD, OP_BE, OP_BF,
     OP_C0, OP_C1, OP_C2, OP_C3, OP_C4, OP_C5, OP_C6, OP_C7, OP_C8, OP_C9, OP_CA, OP_02, OP_02, OP_02, OP_02, OP_02,
     OP_D0, OP_D1, OP_D2, OP_D3, OP_D4, OP_D5, OP_D6, OP_D7, OP_D8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
