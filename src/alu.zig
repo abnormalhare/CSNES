@@ -38,6 +38,14 @@ pub fn ASLA(this: *NES) void {
     this.p.flags.neg  = @intFromBool(this.a >= 0x80);
 }
 
+pub fn CMP(this: *NES) void {
+    const res: u8 = this.a - this.data;
+
+    this.p.flags.carry = @intFromBool(this.a >= this.data);
+    this.p.flags.zero  = @intFromBool(this.a == this.data);
+    this.p.flags.neg   = @intFromBool((res & 0x40) == 0x40);
+}
+
 pub fn EOR(this: *NES) void {
     this.a ^= this.data;
 
