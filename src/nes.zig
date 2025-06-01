@@ -136,6 +136,21 @@ pub const NES = struct {
         std.debug.print("0x{X:0>2}:{X:0>2} {X:0>2} {X:0>2} {X:0>2} | RAM:{X:0>2} {X:0>2} {X:0>2} {X:0>2}\n{X:0>2} | ", 
         .{this.sp, this.RAM[sp + 2], this.RAM[sp + 1], this.RAM[sp], this.RAM[sp - 1], this.RAM[0], this.RAM[0x1], this.RAM[2], this.RAM[3], this.pc});
         this.cnt = 0;
+
+        // if (this.pc > 0xCFDD and this.pc < 0xCFE2) {
+        //     this.zpDump();
+        // }
+    }
+
+    fn zpDump(this: *NES) void {
+        std.debug.print("\n", .{});
+        var i: u16 = 0;
+        while (i < 0x100) {
+            std.debug.print("{X:0>2} | {X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}\n", .{
+                i, this.RAM[i], this.RAM[i+1], this.RAM[i+2], this.RAM[i+3], this.RAM[i+4], this.RAM[i+5], this.RAM[i+6], this.RAM[i+7]
+            });
+            i += 8;
+        }
     }
 
     pub fn startPC(this: *NES) void {
@@ -143,26 +158,27 @@ pub const NES = struct {
     }
 
     pub fn run(this: *NES) void {
-        switch (this.timing) {
-            0 => {
-                this.prtEnd();
-                this.ab.full = this.pc;
-                this.pc += 1;
-                this.R_getROMWithAB();
-                this.prtOp();
-                this.ir = this.data;
-            },
-            else => {
-                if (this.p.flags.intd == 0 and this.irq == 1) {
-                    opTable[0x00](this);
-                    return;
-                }
+        if (this.timing == 0) {
+            this.prtEnd();
 
-                opTable[this.ir](this);
+            this.ab.full = this.pc;
+            this.pc += 1;
+            this.R_getROMWithAB();
 
-                if (this.timing == 0) this.run();
-            }
+            this.prtOp();
+
+            this.ir = this.data;
+            return;
         }
+
+        if (this.p.flags.intd == 0 and this.irq == 1) {
+            opTable[0x00](this);
+            return;
+        }
+
+        opTable[this.ir](this);
+
+        if (this.timing == 0) this.run();
     }
 
     fn prtOp(this: *NES) void {

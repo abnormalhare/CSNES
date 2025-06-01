@@ -303,9 +303,9 @@ pub fn IX_R(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_getROMWithD(); this.addData(this.x); },
+        2 => { this.addData(this.x); },
         3 => { this.R_setABIndirect(@intCast(this.data), 0); this.addData(1); },
-        4 => { this.R_getROMWithAB(); this.R_setABIndirect(@intCast(this.data), 1); },
+        4 => { this.R_setABIndirect(@intCast(this.data), 1); },
         5 => this.R_getROMWithAB(),
     }
 }
@@ -316,9 +316,9 @@ pub fn IX_M(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_getROMWithD(); this.addData(this.x); },
+        2 => this.addData(this.x),
         3 => { this.R_setABIndirect(@intCast(this.data), 0); this.addData(1); },
-        4 => { this.R_getROMWithAB(); this.R_setABIndirect(@intCast(this.data), 1); },
+        4 => this.R_setABIndirect(@intCast(this.data), 1),
         5 => this.R_getROMWithAB(),
         6 => this.W_writeROM(),
         7 => this.W_writeROM(),
@@ -332,9 +332,9 @@ pub fn IX_W(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_getROMWithD(); this.addData(this.x); },
+        2 => this.addData(this.x),
         3 => { this.R_setABIndirect(@intCast(this.data), 0); this.addData(1); },
-        4 => { this.R_getROMWithAB(); this.R_setABIndirect(@intCast(this.data), 1); },
+        4 => this.R_setABIndirect(@intCast(this.data), 1),
         5 => {},
     }
 }

@@ -21,8 +21,7 @@ pub fn read(nes: *NES, index: u16) u8 {
         0x2007 => nes.ppu.PPUDATA,
     };
 
-    nes.data = @truncate(ret);
-    return nes.data;
+    return @truncate(ret);
 }
 
 pub fn write(nes: *NES, index: u16, data: u8) void {

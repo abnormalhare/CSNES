@@ -19,20 +19,14 @@ pub fn AND(this: *NES) void {
 }
 
 pub fn ASL(this: *NES) void {
-    const prevC: u1 = this.p.flags.carry;
-
     this.data, this.p.flags.carry = @shlWithOverflow(this.data, 1);
-    this.data += @intCast(prevC);
 
     this.p.flags.zero = @intFromBool(this.data == 0x00);
     this.p.flags.neg  = @intFromBool(this.data >= 0x80);
 }
 
 pub fn ASLA(this: *NES) void {
-    const prevC: u1 = this.p.flags.carry;
-
     this.a, this.p.flags.carry = @shlWithOverflow(this.a, 1);
-    this.a += @intCast(prevC);
 
     this.p.flags.zero = @intFromBool(this.a == 0x00);
     this.p.flags.neg  = @intFromBool(this.a >= 0x80);
@@ -149,7 +143,7 @@ pub fn ROL(this: *NES) void {
 }
 
 pub fn ROLA(this: *NES) void {
-    const c: bool = this.data >= 0x80;
+    const c: bool = this.a >= 0x80;
 
     this.a <<= 1;
     this.a += this.p.flags.carry;
