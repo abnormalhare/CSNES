@@ -107,7 +107,7 @@ pub fn LDY(this: *NES) void {
 }
 
 pub fn LSR(this: *NES) void {
-    const c: u1 = @intCast(this.a & 1);
+    const c: u1 = @intCast(this.data & 1);
     this.data >>= 1;
 
     this.p.flags.carry = c;

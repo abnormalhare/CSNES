@@ -27,6 +27,7 @@ pub const PPU = struct {
     addr: u3,
 
     // emu info
+    wasRW: bool,
     cycleCount: u16,
 
     pub fn init(this: *PPU, nes: *NES) !void {
@@ -41,16 +42,16 @@ pub const PPU = struct {
     }
 
     pub fn run(this: *PPU) void {
-        if (this.rw != 1) return;
+        if (!this.wasRW) return;
 
-        this.rw = 0;
+        this.wasRW = false;
 
         switch (this.addr) {
-            0 => this.PPUCTRL = this.data,
-            1 => this.PPUMASK = this.data,
+            0 => {},
+            1 => {},
             2 => {},
-            3 => this.OAMADDR = this.data,
-            4 => this.OAMDATA = this.data,
+            3 => {},
+            4 => {},
             5 => {},
             6 => {},
             7 => {},
@@ -59,14 +60,23 @@ pub const PPU = struct {
         this.nes.data = this.data;
     }
 
-    pub fn read(this: *PPU, index: u3) void {
+    pub fn read(this: *PPU, index: u3) u8 {
         this.rw = 1;
         this.addr = index;
+
+        this.wasRW = true;
+
+        return switch (index) {
+            else => this.data,
+            // 2 => {},
+        };
     }
 
     pub fn write(this: *PPU, index: u3, data: u8) void {
-        this.rw = 1;
+        this.rw = 0;
         this.addr = index;
         this.data = data;
+        
+        this.wasRW = true;
     }
 };

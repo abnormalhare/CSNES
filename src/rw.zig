@@ -4,7 +4,7 @@ const mapper = @import("mapper.zig");
 pub fn read(nes: *NES, index: u16) u8 {
     return switch (index) {
         0x0000...0x1FFF => nes.RAM[index % 0x0800],
-        0x2000...0x3FFF => { nes.ppu.read(@intCast(index % 8)); return nes.data; },
+        0x2000...0x3FFF => nes.ppu.read(@intCast(index % 8)),
         0x4000...0x401F => nes.data,
         0x4020...0xFFFF => mapper.read(index),
     };

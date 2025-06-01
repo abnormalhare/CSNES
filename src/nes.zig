@@ -28,7 +28,8 @@ pub const NES = struct {
 
     // only simulated when needed
     pcs: def.addr_bus,
-    add: def.Status,
+    add: u8,
+    addF: def.Status,
 
     // External Connections
     RAM: [0x800]u8,
@@ -268,6 +269,20 @@ pub const NES = struct {
         }
     }
 
+    pub fn setABIndirect(this: *NES, data: u8, stage: u1) void {
+        switch (stage) {
+            0 => {
+                this.ab.half.low = data;
+                this.data = this.add;
+                this.add = this.ab.half.low;
+            },
+            1 => {
+                this.ab.half.low = this.add;
+                this.ab.half.high = data;
+            },
+        }
+    }
+
     pub fn R_setPCIndirect(this: *NES, addr: u16, stage: u1) void {
         this.setPC(read(this, addr), stage);
     }
@@ -275,10 +290,10 @@ pub const NES = struct {
     pub fn ABAdd(this: *NES, val: u8, stage: u1) void {
         switch (stage) {
             0 => {
-                this.ab.half.low, this.add.flags.carry = @addWithOverflow(this.ab.half.low, val);
+                this.ab.half.low, this.addF.flags.carry = @addWithOverflow(this.ab.half.low, val);
             },
             1 => {
-                this.ab.half.high, _ = @addWithOverflow(this.ab.half.high, this.add.flags.carry);
+                this.ab.half.high, _ = @addWithOverflow(this.ab.half.high, this.addF.flags.carry);
             },
         }
     }
