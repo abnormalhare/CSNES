@@ -39,9 +39,9 @@ pub fn A_R(this: *NES) void {
     this.checkIRQ(3);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => { this.R_readROM(); this.setAB(this.data, 0); },
-        2 => { this.R_readROM(); this.setAB(this.data, 1); },
-        3 => this.R_getROMWithAB(),
+        1 => this.R_readROM(),
+        2 => { this.setAB(this.data, 0); this.R_readROM(); },
+        3 => { this.setAB(this.data, 1); this.R_getROMWithAB(); },
     }
 }
 
@@ -50,9 +50,9 @@ pub fn A_M(this: *NES) void {
     this.checkIRQ(5);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => { this.R_readROM(); this.setAB(this.data, 0); },
-        2 => { this.R_readROM(); this.setAB(this.data, 1); },
-        3 => this.R_getROMWithAB(),
+        1 => this.R_readROM(),
+        2 => { this.setAB(this.data, 0); this.R_readROM(); },
+        3 => { this.setAB(this.data, 1); this.R_getROMWithAB(); },
         4 => this.W_writeROM(),
         5 => this.W_writeROM(),
     }
@@ -64,9 +64,9 @@ pub fn A_W(this: *NES) void {
     this.checkIRQ(3);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => { this.R_readROM(); this.setAB(this.data, 0); },
-        2 => { this.R_readROM(); this.setAB(this.data, 1); },
-        3 => {},
+        1 => this.R_readROM(),
+        2 => { this.setAB(this.data, 0); this.R_readROM(); },
+        3 => this.setAB(this.data, 1),
     }
 }
 
@@ -109,7 +109,7 @@ pub fn DX_R(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_getROMWithD(); this.addData(this.x); },
+        2 => this.addData(this.x),
         3 => this.R_getROMWithD(),
     }
 }
@@ -120,7 +120,7 @@ pub fn DX_M(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_getROMWithD(); this.addData(this.x); },
+        2 => this.addData(this.x),
         3 => this.R_getROMWithD(),
         4 => this.W_writeROMD(),
         5 => this.W_writeROMD(),
@@ -134,7 +134,7 @@ pub fn DX_W(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_getROMWithD(); this.addData(this.x); },
+        2 => this.addData(this.x),
         3 => this.setAB(this.data, 0),
     }
 }
@@ -145,7 +145,7 @@ pub fn DY_R(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_getROMWithD(); this.addData(this.y); },
+        2 => this.addData(this.y),
         3 => this.R_getROMWithD(),
     }
 }
@@ -156,7 +156,7 @@ pub fn DY_M(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_getROMWithD(); this.addData(this.y); },
+        2 => this.addData(this.y),
         3 => this.R_getROMWithD(),
         4 => this.W_writeROMD(),
         5 => this.W_writeROMD(),
@@ -170,7 +170,7 @@ pub fn DY_W(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_getROMWithD(); this.addData(this.y); },
+        2 => this.addData(this.y),
         3 => this.setAB(this.data, 0),
     }
 }
@@ -180,18 +180,18 @@ pub fn AX_R(this: *NES) void {
     this.checkIRQ(4);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => { this.R_readROM(); this.setAB(this.data, 0); },
-        2 => { this.R_readROM(); this.setAB(this.data, 1); this.ABAdd(this.x, 0); },
+        1 => this.R_readROM(),
+        2 => { this.setAB(this.data, 0); this.R_readROM();  },
         3 => {
+            this.setAB(this.data, 1);
+            this.ABAdd(this.x, 0);
+
             this.R_getROMWithAB();
             if (this.add.flags.carry == 0) {
                 this.timing = 0xE;
-                return;
             }
-
-            this.ABAdd(this.x, 1);
         },
-        4 => this.R_getROMWithAB(),
+        4 => { this.ABAdd(this.x, 1); this.R_getROMWithAB(); },
     }
 }
 
@@ -200,10 +200,10 @@ pub fn AX_M(this: *NES) void {
     this.checkIRQ(6);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => { this.R_readROM(); this.setAB(this.data, 0); },
-        2 => { this.R_readROM(); this.setAB(this.data, 1); this.ABAdd(this.x, 0); },
-        3 => { this.R_getROMWithAB(); this.ABAdd(this.x, 1); },
-        4 => this.R_getROMWithAB(),
+        1 => this.R_readROM(),
+        2 => { this.setAB(this.data, 0); this.R_readROM(); },
+        3 => { this.setAB(this.data, 1); this.ABAdd(this.x, 0); this.R_getROMWithAB(); },
+        4 => { this.ABAdd(this.x, 1); this.R_getROMWithAB(); },
         5 => this.W_writeROM(),
         6 => this.W_writeROM(),
     }
@@ -215,10 +215,10 @@ pub fn AX_W(this: *NES) void {
     this.checkIRQ(4);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => { this.R_readROM(); this.setAB(this.data, 0); },
-        2 => { this.R_readROM(); this.setAB(this.data, 1); this.ABAdd(this.x, 0); },
-        3 => { this.R_getROMWithAB(); this.ABAdd(this.x, 1); },
-        4 => {},
+        1 => this.R_readROM(),
+        2 => { this.setAB(this.data, 0); this.R_readROM(); },
+        3 => { this.setAB(this.data, 1); this.ABAdd(this.x, 0); this.R_getROMWithAB(); },
+        4 => this.ABAdd(this.x, 1),
     }
 }
 
@@ -227,18 +227,18 @@ pub fn AY_R(this: *NES) void {
     this.checkIRQ(4);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => { this.R_readROM(); this.setAB(this.data, 0); },
-        2 => { this.R_readROM(); this.setAB(this.data, 1); this.ABAdd(this.y, 0); },
+        1 => this.R_readROM(),
+        2 => { this.setAB(this.data, 0); this.R_readROM(); },
         3 => {
+            this.setAB(this.data, 1);
+            this.ABAdd(this.y, 0); 
+
             this.R_getROMWithAB();
             if (this.add.flags.carry == 0) {
                 this.timing = 0xE;
-                return;
             }
-
-            this.ABAdd(this.y, 1);
         },
-        4 => this.R_getROMWithAB(),
+        4 => { this.ABAdd(this.y, 1); this.R_getROMWithAB(); },
     }
 }
 
@@ -247,10 +247,10 @@ pub fn AY_M(this: *NES) void {
     this.checkIRQ(6);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => { this.R_readROM(); this.setAB(this.data, 0); },
-        2 => { this.R_readROM(); this.setAB(this.data, 1); this.ABAdd(this.y, 0); },
-        3 => { this.R_getROMWithAB(); this.ABAdd(this.y, 1); },
-        4 => this.R_getROMWithAB(),
+        1 => this.R_readROM(),
+        2 => { this.setAB(this.data, 0); this.R_readROM(); },
+        3 => { this.setAB(this.data, 1); this.ABAdd(this.y, 0); this.R_getROMWithAB(); },
+        4 => { this.ABAdd(this.y, 1); this.R_getROMWithAB(); },
         5 => this.W_writeROM(),
         6 => this.W_writeROM(),
     }
@@ -262,10 +262,10 @@ pub fn AY_W(this: *NES) void {
     this.checkIRQ(4);
     switch (this.timing) {
         else => this.resetTiming(),
-        1 => { this.R_readROM(); this.setAB(this.data, 0); },
-        2 => { this.R_readROM(); this.setAB(this.data, 1); this.ABAdd(this.y, 0); },
-        3 => { this.R_getROMWithAB(); this.ABAdd(this.y, 1); },
-        4 => {},
+        1 => this.R_readROM(),
+        2 => { this.setAB(this.data, 0); this.R_readROM(); },
+        3 => { this.setAB(this.data, 1); this.ABAdd(this.y, 0); this.R_getROMWithAB(); },
+        4 => this.ABAdd(this.y, 1),
     }
 }
 
@@ -281,7 +281,14 @@ pub fn RA(this: *NES, check: bool) void {
         },
         2 => {
             const pc_lo: u8 = @truncate(this.pc);
-            const addr_lo: u8, this.add.flags.carry = @addWithOverflow(pc_lo, this.data);
+            var addr_lo: u8 = undefined;
+            if (this.data < 0x80) {
+                addr_lo, this.add.flags.carry = @addWithOverflow(pc_lo, this.data);
+                this.add.flags.over = 0;
+            } else {
+                addr_lo, this.add.flags.carry = @subWithOverflow(pc_lo, 255 - this.data + 1);
+                this.add.flags.over = 1;
+            }
             this.setPC(addr_lo, 0);
             this.R_getROMWithPC();
             
@@ -291,7 +298,11 @@ pub fn RA(this: *NES, check: bool) void {
             this.timing = 0xE;
         },
         3 => {
-            this.setPC(@truncate((this.pc >> 8) + this.add.flags.carry), 1);
+            if (this.add.flags.over == 0) {
+                this.setPC(@truncate((this.pc >> 8) + this.add.flags.carry), 1);
+            } else {
+                this.setPC(@truncate((this.pc >> 8) - this.add.flags.carry), 1);
+            }
             this.R_getROMWithPC();
         },
     }
@@ -303,10 +314,10 @@ pub fn IX_R(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.addData(this.x); },
-        3 => { this.R_setABIndirect(@intCast(this.data), 0); this.addData(1); },
-        4 => { this.R_setABIndirect(@intCast(this.data), 1); },
-        5 => this.R_getROMWithAB(),
+        2 => this.addData(this.x),
+        3 => this.R_getROMWithD(),
+        4 => { this.setAB(this.data, 0); this.addData(1); this.R_getROMWithD(); },
+        5 => { this.setAB(this.data, 1); this.R_getROMWithAB(); },
     }
 }
 
@@ -317,9 +328,9 @@ pub fn IX_M(this: *NES) void {
         else => this.resetTiming(),
         1 => this.R_readROM(),
         2 => this.addData(this.x),
-        3 => { this.R_setABIndirect(@intCast(this.data), 0); this.addData(1); },
-        4 => this.R_setABIndirect(@intCast(this.data), 1),
-        5 => this.R_getROMWithAB(),
+        3 => this.R_getROMWithD(),
+        4 => { this.setAB(this.data, 0); this.addData(1); this.R_getROMWithD(); },
+        5 => { this.setAB(this.data, 1); this.R_getROMWithAB(); },
         6 => this.W_writeROM(),
         7 => this.W_writeROM(),
     }
@@ -333,9 +344,9 @@ pub fn IX_W(this: *NES) void {
         else => this.resetTiming(),
         1 => this.R_readROM(),
         2 => this.addData(this.x),
-        3 => { this.R_setABIndirect(@intCast(this.data), 0); this.addData(1); },
-        4 => this.R_setABIndirect(@intCast(this.data), 1),
-        5 => {},
+        3 => this.R_getROMWithD(),
+        4 => { this.setAB(this.data, 0); this.addData(1); this.R_getROMWithD(); },
+        5 => this.setAB(this.data, 1),
     }
 }
 
@@ -347,20 +358,19 @@ pub fn IY_R(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_setABIndirect(@intCast(this.data), 0); this.addData(1); },
-        3 => { this.R_setABIndirect(@intCast(this.data), 1); this.ABAdd(this.y, 0); },
+        2 => this.R_getROMWithD(),
+        3 => { this.setAB(this.data, 0); this.addData(1); this.R_getROMWithD(); },
         4 => {
-            this.R_getROMWithAB();
+            this.setAB(this.data, 1);
+            this.ABAdd(this.y, 0);
 
+            this.R_getROMWithAB();
 
             if (this.add.flags.carry == 0) {
                 this.timing = 0xE;
-                return;
             }
-
-            this.ABAdd(this.y, 1);
         },
-        5 => this.R_getROMWithAB(),
+        5 => { this.ABAdd(this.y, 1); this.R_getROMWithAB(); },
     }
 }
 
@@ -370,10 +380,10 @@ pub fn IY_M(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_setABIndirect(@intCast(this.data), 0); this.addData(1); },
-        3 => { this.R_setABIndirect(@intCast(this.data), 1); this.ABAdd(this.y, 0); },
-        4 => { this.R_getROMWithAB(); this.ABAdd(this.y, 1); },
-        5 => this.R_getROMWithAB(),
+        2 => this.R_getROMWithD(),
+        3 => { this.setAB(this.data, 0); this.addData(1); this.R_getROMWithD(); },
+        4 => { this.setAB(this.data, 1); this.ABAdd(this.y, 0); this.R_getROMWithAB(); },
+        5 => { this.ABAdd(this.y, 1); this.R_getROMWithAB(); },
         6 => this.W_writeROM(),
         7 => this.W_writeROM(),
     }
@@ -386,9 +396,9 @@ pub fn IY_W(this: *NES) void {
     switch (this.timing) {
         else => this.resetTiming(),
         1 => this.R_readROM(),
-        2 => { this.R_setABIndirect(@intCast(this.data), 0); this.addData(1); },
-        3 => { this.R_setABIndirect(@intCast(this.data), 1); this.ABAdd(this.y, 0); },
-        4 => { this.R_getROMWithAB(); this.ABAdd(this.y, 1); },
-        5 => {},
+        2 => this.R_getROMWithD(),
+        3 => { this.setAB(this.data, 0); this.addData(1); this.R_getROMWithD(); },
+        4 => { this.setAB(this.data, 1); this.ABAdd(this.y, 0); this.R_getROMWithAB(); },
+        5 => { this.ABAdd(this.y, 1); this.R_getROMWithAB(); },
     }
 }

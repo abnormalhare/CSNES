@@ -80,7 +80,7 @@ pub fn main() !void {
             const scale: i32 = try std.fmt.parseInt(i32, scaleStr, 10);
 
             initSDL(filename, def.SCREEN_WIDTH * scale, def.SCREEN_HEIGHT * scale, def.SCREEN_WIDTH, def.SCREEN_HEIGHT);
-            
+
             nes = (try NES.init(filename)).?;
         } else {
             std.debug.print("Format: NES_Zig.exe <ROM> <scale>", .{});
@@ -95,11 +95,12 @@ pub fn main() !void {
     // nes.startPC();
     while (nes.jam == 0) {
         const currTime: i128 = std.time.nanoTimestamp();
-        
+
         if (currTime - lastTime >= 560) {
             nes.run();
             lastTime = currTime;
             nes.timing += 1;
+            nes.cycleCount += 1;
 
             // const screen: *const u8 = try convertToRGBA(nes.ppu.screen);
             // updateSDL(screen, videoPitch);

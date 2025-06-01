@@ -54,35 +54,12 @@ pub const Header = struct {
     // future support
 };
 
-const Color = struct { v: u6 };
+pub const Color = struct { v: u6 };
 
 pub const Dot = struct { pallete: u6, emphesis: u3 };
 
 pub const SCREEN_WIDTH: i32 = 341;
 pub const SCREEN_HEIGHT: i32 = 262;
-
-pub const PPU = struct {
-    patternTbls: []u8,
-
-    nameTbl: [0x1000]u8,
-    pallete: [32]Color,
-
-    OAM: [4][0x40]u8,
-
-    screen: [SCREEN_WIDTH * SCREEN_HEIGHT]Dot,
-    scanline: i32,
-    dot: i32,
-
-    PPUCTRL: u8,
-    PPUMASK: u8,
-    PPUSTATUS: u8,
-    OAMADDR: u8,
-    OAMDATA: u8,
-    PPUSCROLL: u8,
-    PPUDATA: u8,
-
-    isEvenFrame: bool
-};
 
 pub const addr_bus = extern union {
     full: u16,

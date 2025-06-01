@@ -190,6 +190,7 @@ fn OP_14(this: *NES) void {
 
 /// [R] ORA d,x
 fn OP_15(this: *NES) void {
+    OPTYPE.DX_R(this);
     switch (this.timing) {
         else => {},
         3 => ALU.ORA(this),
@@ -260,7 +261,7 @@ fn OP_1C(this: *NES) void {
 
 /// [R] ORA a,x
 fn OP_1D(this: *NES) void {
-    OPTYPE.AX_M(this);
+    OPTYPE.AX_R(this);
     switch (this.timing) {
         else => {},
         0xE => if (this.add.flags.carry == 0) { ALU.ORA(this); },
@@ -1013,7 +1014,7 @@ fn OP_6B(this: *NES) void {
 /// JMP (a)
 fn OP_6C(this: *NES) void {
     this.checkIRQ(4);
-    
+
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
@@ -1506,6 +1507,7 @@ fn OP_A0(this: *NES) void {
 /// [R] LDA (d,x)
 fn OP_A1(this: *NES) void {
     OPTYPE.IX_R(this);
+    std.debug.print("|| {X:0>2} {X:0>4} ", .{this.data, this.ab.full});
     switch (this.timing) {
         else => {},
         5 => ALU.LDA(this),
@@ -2050,7 +2052,68 @@ fn OP_D8(this: *NES) void {
     }
 }
 
+/// [R] CMP a,y
+fn OP_D9(this: *NES) void {
+    OPTYPE.AY_R(this);
+    switch (this.timing) {
+        else => {},
+        0xE => if (this.add.flags.carry == 0) { ALU.CMP(this); },
+        4 => ALU.CMP(this),
+    }
+}
 
+/// NOP
+fn OP_DA(this: *NES) void {
+    OPTYPE.I(this);
+}
+
+/// [M] DCP a,y
+fn OP_DB(this: *NES) void {
+    OPTYPE.AY_M(this);
+    switch (this.timing) {
+        else => {},
+        5 => {
+            ALU.DEC(this);
+            ALU.CMP(this);
+        },
+    }
+}
+
+/// [R] NOP a,x
+fn OP_DC(this: *NES) void {
+    OPTYPE.AX_R(this);
+}
+
+/// [R] CMP a,x
+fn OP_DD(this: *NES) void {
+    OPTYPE.AX_R(this);
+    switch (this.timing) {
+        else => {},
+        0xE => if (this.add.flags.carry == 0) { ALU.CMP(this); },
+        4 => ALU.CMP(this),
+    }
+}
+
+/// [M] DEC a,x
+fn OP_DE(this: *NES) void {
+    OPTYPE.AX_M(this);
+    switch (this.timing) {
+        else => {},
+        5 => ALU.DEC(this),
+    }
+}
+
+/// [M] DCP a,x
+fn OP_DF(this: *NES) void {
+    OPTYPE.AX_M(this);
+    switch (this.timing) {
+        else => {},
+        5 => {
+            ALU.DEC(this);
+            ALU.CMP(this);
+        },
+    }
+}
 
 /// CPX #i
 fn OP_E0(this: *NES) void {
@@ -2269,11 +2332,75 @@ fn OP_F7(this: *NES) void {
     }
 }
 
+/// SED
 fn OP_F8(this: *NES) void {
     OPTYPE.I(this);
     switch (this.timing) {
         else => {},
         1 => this.p.flags.dec = 1,
+    }
+}
+
+/// [R] SBC a,y
+fn OP_F9(this: *NES) void {
+    OPTYPE.AY_R(this);
+    switch (this.timing) {
+        else => {},
+        0xE => if (this.add.flags.carry == 0) { ALU.SBC(this); },
+        4 => ALU.SBC(this),
+    }
+}
+
+/// NOP
+fn OP_FA(this: *NES) void {
+    OPTYPE.I(this);
+}
+
+/// [M] ISC a,y
+fn OP_FB(this: *NES) void {
+    OPTYPE.AY_M(this);
+    switch (this.timing) {
+        else => {},
+        5 => {
+            ALU.INC(this);
+            ALU.SBC(this);
+        },
+    }
+}
+
+/// [R] NOP a,x
+fn OP_FC(this: *NES) void {
+    OPTYPE.AX_R(this);
+}
+
+/// [R] SBC a,x
+fn OP_FD(this: *NES) void {
+    OPTYPE.AX_R(this);
+    switch (this.timing) {
+        else => {},
+        0xE => if (this.add.flags.carry == 0) { ALU.SBC(this); },
+        4 => ALU.SBC(this),
+    }
+}
+
+/// [M] INC a,x
+fn OP_FE(this: *NES) void {
+    OPTYPE.AX_M(this);
+    switch (this.timing) {
+        else => {},
+        5 => ALU.INC(this),
+    }
+}
+
+/// [M] INC a,x
+fn OP_FF(this: *NES) void {
+    OPTYPE.AX_M(this);
+    switch (this.timing) {
+        else => {},
+        5 => {
+            ALU.INC(this);
+            ALU.SBC(this);
+        },
     }
 }
 
@@ -2292,7 +2419,7 @@ pub const opTable = [_]*const fn(*NES) void{
     OP_A0, OP_A1, OP_A2, OP_A3, OP_A4, OP_A5, OP_A6, OP_A7, OP_A8, OP_A9, OP_AA, OP_AB, OP_AC, OP_AD, OP_AE, OP_AF,
     OP_B0, OP_B1, OP_B2, OP_B3, OP_B4, OP_B5, OP_B6, OP_B7, OP_B8, OP_B9, OP_BA, OP_BB, OP_BC, OP_BD, OP_BE, OP_BF,
     OP_C0, OP_C1, OP_C2, OP_C3, OP_C4, OP_C5, OP_C6, OP_C7, OP_C8, OP_C9, OP_CA, OP_CB, OP_CC, OP_CD, OP_CE, OP_CF,
-    OP_D0, OP_D1, OP_D2, OP_D3, OP_D4, OP_D5, OP_D6, OP_D7, OP_D8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_D0, OP_D1, OP_D2, OP_D3, OP_D4, OP_D5, OP_D6, OP_D7, OP_D8, OP_D9, OP_DA, OP_DB, OP_DC, OP_DD, OP_DE, OP_DF,
     OP_E0, OP_E1, OP_E2, OP_E3, OP_E4, OP_E5, OP_E6, OP_E7, OP_E8, OP_E9, OP_EA, OP_EB, OP_EC, OP_ED, OP_EE, OP_EF,
-    OP_F0, OP_F1, OP_F2, OP_F3, OP_F4, OP_F5, OP_F6, OP_F7, OP_F8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_F0, OP_F1, OP_F2, OP_F3, OP_F4, OP_F5, OP_F6, OP_F7, OP_F8, OP_F9, OP_FA, OP_FB, OP_FC, OP_FD, OP_FE, OP_FF,
 };

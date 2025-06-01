@@ -2,6 +2,7 @@ const std = @import("std");
 const alloc = @import("global").alloc;
 
 const def = @import("defines.zig");
+const PPU = @import("ppu.zig").PPU;
 const mapper = @import("mapper.zig");
 const OPTYPE = @import("opcode_types.zig");
 
@@ -9,11 +10,14 @@ const read = @import("rw.zig").read;
 const write = @import("rw.zig").write;
 const opTable = @import("opcodes.zig").opTable;
 
-
 pub const NES = struct {
     // base regs
-    a: u8, x: u8, y: u8,
-    pc: u16, sp: u8,
+    a: u8,
+    x: u8,
+    y: u8,
+    pc: u16,
+    ab: def.addr_bus,
+    sp: u8,
     data: u8,
     p: def.Status,
     setI: bool,
@@ -21,15 +25,15 @@ pub const NES = struct {
     // internal logic
     ir: u8,
     timing: u4,
-    
+
     // only simulated when needed
-    pcs: def.addr_bus, ab: def.addr_bus,
+    pcs: def.addr_bus,
     add: def.Status,
 
     // External Connections
     RAM: [0x800]u8,
     SRAM: [0x2000]u8,
-    ppu: def.PPU,
+    ppu: PPU,
 
     // External Pins
     irq: u1,
@@ -53,7 +57,7 @@ pub const NES = struct {
 
         this.ir = 0;
         this.timing = 0;
-        
+
         this.p.all = 0b00100100;
 
         this.setI = true;
@@ -61,14 +65,6 @@ pub const NES = struct {
 
         this.RAM = [_]u8{0} ** 0x800;
         this.SRAM = [_]u8{0} ** 0x2000;
-
-        this.ppu.PPUCTRL = 0;
-        this.ppu.PPUMASK = 0;
-        this.ppu.PPUSTATUS = 0;
-        this.ppu.OAMADDR = 0;
-        this.ppu.isEvenFrame = false;
-        this.ppu.scanline = 0;
-        this.ppu.dot = 0;
 
         this.cycleCount = 0;
         this.jam = 0;
@@ -85,9 +81,9 @@ pub const NES = struct {
                 return null;
             },
             else => {
-                std.debug.print("ERROR: Unhandled error '{any}' for file '{s}'.", .{err, filename});
+                std.debug.print("ERROR: Unhandled error '{any}' for file '{s}'.", .{ err, filename });
                 return null;
-            }
+            },
         };
         _ = this;
 
@@ -104,8 +100,10 @@ pub const NES = struct {
         if (!validNES) return null;
 
         const stat = try file.?.stat();
-        const fullFile: []u8 = try alloc.alloc(u8,stat.size - 0x10);
+        const fullFile: []u8 = try alloc.alloc(u8, stat.size - 0x10);
         _ = try file.?.read(fullFile);
+
+        try nes.ppu.init(nes);
 
         return nes;
     }
@@ -117,11 +115,10 @@ pub const NES = struct {
             2 => "         ",
             3 => "      ",
         };
-        std.debug.print("{s}| A:{X:0>2} X:{X:0>2} Y:{X:0>2} P:{X:0>2} | ", .{str, this.a, this.x, this.y, this.p.all});
+        std.debug.print("{s}| A:{X:0>2} X:{X:0>2} Y:{X:0>2} P:{X:0>2} | ", .{ str, this.a, this.x, this.y, this.p.all });
 
         const sp: u16 = @as(u16, this.sp) + 0x100;
-        std.debug.print("0x{X:0>2}:{X:0>2} {X:0>2} {X:0>2} {X:0>2} | RAM:{X:0>2} {X:0>2} {X:0>2} {X:0>2}\n{X:0>4} | ", 
-        .{this.sp, this.RAM[sp + 2], this.RAM[sp + 1], this.RAM[sp], this.RAM[sp - 1], this.RAM[0], this.RAM[0x1], this.RAM[2], this.RAM[3], this.pc});
+        std.debug.print("0x{X:0>2}:{X:0>2} {X:0>2} {X:0>2} {X:0>2} | RAM:{X:0>2} {X:0>2} {X:0>2} {X:0>2}\n{X:0>4} | ", .{ this.sp, this.RAM[sp + 2], this.RAM[sp + 1], this.RAM[sp], this.RAM[sp - 1], this.RAM[0], this.RAM[0x1], this.RAM[2], this.RAM[3], this.pc });
         this.cnt = 0;
 
         // if (this.pc == 0xDB7B) {
@@ -134,9 +131,7 @@ pub const NES = struct {
         std.debug.print("\n", .{});
         var i: u16 = val;
         while (i < val + 0x100) {
-            std.debug.print("{X:0>2} | {X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}\n", .{
-                i, this.RAM[i], this.RAM[i+1], this.RAM[i+2], this.RAM[i+3], this.RAM[i+4], this.RAM[i+5], this.RAM[i+6], this.RAM[i+7]
-            });
+            std.debug.print("{X:0>2} | {X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}\n", .{ i, this.RAM[i], this.RAM[i + 1], this.RAM[i + 2], this.RAM[i + 3], this.RAM[i + 4], this.RAM[i + 5], this.RAM[i + 6], this.RAM[i + 7] });
             i += 8;
         }
     }
@@ -258,7 +253,7 @@ pub const NES = struct {
             1 => {
                 this.pcs.half.high = data;
                 this.pc = this.pcs.full;
-            }
+            },
         }
     }
 
@@ -269,16 +264,12 @@ pub const NES = struct {
             },
             1 => {
                 this.ab.half.high = data;
-            }
+            },
         }
     }
 
     pub fn R_setPCIndirect(this: *NES, addr: u16, stage: u1) void {
         this.setPC(read(this, addr), stage);
-    }
-
-    pub fn R_setABIndirect(this: *NES, addr: u16, stage: u1) void {
-        this.setAB(read(this, addr), stage);
     }
 
     pub fn ABAdd(this: *NES, val: u8, stage: u1) void {
@@ -288,7 +279,7 @@ pub const NES = struct {
             },
             1 => {
                 this.ab.half.high, _ = @addWithOverflow(this.ab.half.high, this.add.flags.carry);
-            }
+            },
         }
     }
 
