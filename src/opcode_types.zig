@@ -87,8 +87,8 @@ pub fn D_M(this: *NES) void {
         else => this.resetTiming(),
         1 => this.R_readROM(),
         2 => this.R_getROMWithD(),
-        3 => this.W_writeROM(),
-        4 => this.W_writeROM(),
+        3 => this.W_writeROMD(),
+        4 => this.W_writeROMD(),
     }
 }
 
@@ -122,8 +122,8 @@ pub fn DX_M(this: *NES) void {
         1 => this.R_readROM(),
         2 => { this.R_getROMWithD(); this.addData(this.x); },
         3 => this.R_getROMWithD(),
-        4 => this.W_writeROM(),
-        5 => this.W_writeROM(),
+        4 => this.W_writeROMD(),
+        5 => this.W_writeROMD(),
     }
 }
 
@@ -158,8 +158,8 @@ pub fn DY_M(this: *NES) void {
         1 => this.R_readROM(),
         2 => { this.R_getROMWithD(); this.addData(this.y); },
         3 => this.R_getROMWithD(),
-        4 => this.W_writeROM(),
-        5 => this.W_writeROM(),
+        4 => this.W_writeROMD(),
+        5 => this.W_writeROMD(),
     }
 }
 
@@ -339,6 +339,8 @@ pub fn IX_W(this: *NES) void {
     }
 }
 
+const std = @import("std");
+
 /// indirect indexed addressing, read
 pub fn IY_R(this: *NES) void {
     this.checkIRQ(5);
@@ -349,6 +351,8 @@ pub fn IY_R(this: *NES) void {
         3 => { this.R_setABIndirect(@intCast(this.data), 1); this.ABAdd(this.y, 0); },
         4 => {
             this.R_getROMWithAB();
+
+
             if (this.add.flags.carry == 0) {
                 this.timing = 0xE;
                 return;

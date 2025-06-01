@@ -10,9 +10,6 @@ const write = @import("rw.zig").write;
 const opTable = @import("opcodes.zig").opTable;
 
 
-var debugLength: i32 = 0;
-var debugOut: std.fs.File = undefined;
-
 pub const NES = struct {
     // base regs
     a: u8, x: u8, y: u8,
@@ -92,16 +89,6 @@ pub const NES = struct {
                 return null;
             }
         };
-        debugOut = std.fs.cwd().createFile("output.txt", .{}) catch |err| switch (err) {
-            error.AccessDenied => {
-                std.debug.print("ERROR: Cannot open '{s}': Access Denied.", .{filename});
-                return null;
-            },
-            else => {
-                std.debug.print("ERROR: Unhandled error '{any}' for file '{s}'.", .{err, filename});
-                return null;
-            }
-        };
         _ = this;
 
         return file;
@@ -133,19 +120,20 @@ pub const NES = struct {
         std.debug.print("{s}| A:{X:0>2} X:{X:0>2} Y:{X:0>2} P:{X:0>2} | ", .{str, this.a, this.x, this.y, this.p.all});
 
         const sp: u16 = @as(u16, this.sp) + 0x100;
-        std.debug.print("0x{X:0>2}:{X:0>2} {X:0>2} {X:0>2} {X:0>2} | RAM:{X:0>2} {X:0>2} {X:0>2} {X:0>2}\n{X:0>2} | ", 
+        std.debug.print("0x{X:0>2}:{X:0>2} {X:0>2} {X:0>2} {X:0>2} | RAM:{X:0>2} {X:0>2} {X:0>2} {X:0>2}\n{X:0>4} | ", 
         .{this.sp, this.RAM[sp + 2], this.RAM[sp + 1], this.RAM[sp], this.RAM[sp - 1], this.RAM[0], this.RAM[0x1], this.RAM[2], this.RAM[3], this.pc});
         this.cnt = 0;
 
-        // if (this.pc > 0xCFDD and this.pc < 0xCFE2) {
+        // if (this.pc == 0xDB7B) {
         //     this.zpDump();
         // }
     }
 
     fn zpDump(this: *NES) void {
+        const val: u16 = 0x180;
         std.debug.print("\n", .{});
-        var i: u16 = 0;
-        while (i < 0x100) {
+        var i: u16 = val;
+        while (i < val + 0x100) {
             std.debug.print("{X:0>2} | {X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}{X:0>2}\n", .{
                 i, this.RAM[i], this.RAM[i+1], this.RAM[i+2], this.RAM[i+3], this.RAM[i+4], this.RAM[i+5], this.RAM[i+6], this.RAM[i+7]
             });

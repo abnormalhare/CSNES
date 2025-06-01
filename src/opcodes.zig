@@ -161,7 +161,7 @@ fn OP_11(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
-        4 => if (this.add.flags.carry == 0) { ALU.ORA(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.ORA(this); },
         5 => ALU.ORA(this),
     }
 }
@@ -231,7 +231,7 @@ fn OP_19(this: *NES) void {
     OPTYPE.AY_R(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) { ALU.ORA(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.ORA(this); },
         4 => ALU.ORA(this),
     }
 }
@@ -263,7 +263,7 @@ fn OP_1D(this: *NES) void {
     OPTYPE.AX_M(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) { ALU.ORA(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.ORA(this); },
         4 => ALU.ORA(this),
     }
 }
@@ -457,10 +457,10 @@ fn OP_30(this: *NES) void {
 
 /// [R] AND (d),y
 fn OP_31(this: *NES) void {
-    OPTYPE.IX_R(this);
+    OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
-        4 => if (this.add.flags.carry == 0) { ALU.AND(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.AND(this); },
         5 => ALU.AND(this),
     }
 }
@@ -531,7 +531,7 @@ fn OP_39(this: *NES) void {
     OPTYPE.AY_R(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) { ALU.AND(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.AND(this); },
         4 => ALU.AND(this),
     }
 }
@@ -563,7 +563,7 @@ fn OP_3D(this: *NES) void {
     OPTYPE.AX_R(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) { ALU.AND(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.AND(this); },
         4 => ALU.AND(this),
     }
 }
@@ -758,7 +758,7 @@ fn OP_51(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
-        4 => if (this.add.flags.carry == 0) { ALU.EOR(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.EOR(this); },
         5 => ALU.EOR(this),
     }
 }
@@ -829,7 +829,7 @@ fn OP_59(this: *NES) void {
     OPTYPE.AY_R(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) { ALU.EOR(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.EOR(this); },
         4 => ALU.EOR(this),
     }
 }
@@ -861,7 +861,7 @@ fn OP_5D(this: *NES) void {
     OPTYPE.AX_R(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) { ALU.EOR(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.EOR(this); },
         4 => ALU.EOR(this),
     }
 }
@@ -1013,12 +1013,13 @@ fn OP_6B(this: *NES) void {
 /// JMP (a)
 fn OP_6C(this: *NES) void {
     this.checkIRQ(4);
+    
     switch (this.timing) {
         else => this.resetTiming(),
         1 => { this.R_readROM(); this.setAB(this.data, 0); },
         2 => { this.R_readROM(); this.setAB(this.data, 1); },
-        3 => { this.R_getROMWithPC(); this.setPC(this.ab.half.low, 0); },
-        4 => { this.R_getROMWithPC(); this.setPC(this.ab.half.high, 1); },
+        3 => { this.R_getROMWithAB(); this.setPC(this.data, 0); this.ABAdd(1, 0); },
+        4 => { this.R_getROMWithAB(); this.setPC(this.data, 1); },
     }
 }
 
@@ -1062,7 +1063,7 @@ fn OP_71(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
-        4 => if (this.add.flags.carry == 0) { ALU.ADC(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.ADC(this); },
         5 => ALU.ADC(this),
     }
 }
@@ -1133,7 +1134,7 @@ fn OP_79(this: *NES) void {
     OPTYPE.AY_R(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) { ALU.ADC(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.ADC(this); },
         4 => ALU.ADC(this),
     }
 }
@@ -1165,7 +1166,7 @@ fn OP_7D(this: *NES) void {
     OPTYPE.AX_R(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) { ALU.ADC(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.ADC(this); },
         4 => ALU.ADC(this),
     }
 }
@@ -1333,13 +1334,12 @@ fn OP_90(this: *NES) void {
     OPTYPE.RA(this, this.p.flags.carry == 0);
 }
 
-/// [R] STA (d),y
+/// [W] STA (d),y
 fn OP_91(this: *NES) void {
-    OPTYPE.IY_R(this);
+    OPTYPE.IY_W(this);
     switch (this.timing) {
         else => {},
-        4 => if (this.add.flags.carry == 0) { this.W_writeROMVD(this.a); },
-        5 => this.W_writeROMVD(this.a),
+        5 => this.W_writeROMV(this.a),
     }
 }
 
@@ -1660,7 +1660,7 @@ fn OP_B1(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
-        4 => if (this.add.flags.carry == 0) { ALU.LDA(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.LDA(this); },
         5 => ALU.LDA(this),
     }
 }
@@ -1735,7 +1735,7 @@ fn OP_B9(this: *NES) void {
     OPTYPE.AY_R(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) { ALU.LDA(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.LDA(this); },
         4 => ALU.LDA(this),
     }
 }
@@ -1768,7 +1768,7 @@ fn OP_BC(this: *NES) void {
     OPTYPE.AX_R(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) { ALU.LDY(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.LDY(this); },
         4 => ALU.LDY(this),
     }
 }
@@ -1778,7 +1778,7 @@ fn OP_BD(this: *NES) void {
     OPTYPE.AX_R(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) { ALU.LDA(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.LDA(this); },
         4 => ALU.LDA(this),
     }
 }
@@ -1788,7 +1788,7 @@ fn OP_BE(this: *NES) void {
     OPTYPE.AY_R(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) { ALU.LDX(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.LDX(this); },
         4 => ALU.LDX(this),
     }
 }
@@ -1798,7 +1798,7 @@ fn OP_BF(this: *NES) void {
     OPTYPE.AX_R(this);
     switch (this.timing) {
         else => {},
-        3 => if (this.add.flags.carry == 0) {
+        0xE => if (this.add.flags.carry == 0) {
             ALU.LDA(this);
             ALU.TAX(this);
         },
@@ -1920,7 +1920,59 @@ fn OP_CA(this: *NES) void {
     }
 }
 
+/// AXS #i
+fn OP_CB(this: *NES) void {
+    this.checkIRQ(1);
+    switch (this.timing) {
+        else => this.resetTiming(),
+        1 => {
+            this.x, const c: u1 = @subWithOverflow(this.a & this.x, this.data);
 
+            this.p.flags.carry = ~c;
+            this.p.flags.zero = @intFromBool(this.x == 0x00);
+            this.p.flags.neg  = @intFromBool(this.x >= 0x80);
+        },
+    }
+}
+
+/// [R] CPY a
+fn OP_CC(this: *NES) void {
+    OPTYPE.A_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => ALU.CPY(this),
+    }
+}
+
+/// [R] CMP a
+fn OP_CD(this: *NES) void {
+    OPTYPE.A_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => ALU.CMP(this),
+    }
+}
+
+/// [M] ASL a
+fn OP_CE(this: *NES) void {
+    OPTYPE.A_M(this);
+    switch (this.timing) {
+        else => {},
+        4 => ALU.DEC(this),
+    }
+}
+
+/// [M] ASL a
+fn OP_CF(this: *NES) void {
+    OPTYPE.A_M(this);
+    switch (this.timing) {
+        else => {},
+        4 => {
+            ALU.DEC(this);
+            ALU.CMP(this);
+        },
+    }
+}
 
 /// BNE
 fn OP_D0(this: *NES) void {
@@ -1932,7 +1984,7 @@ fn OP_D1(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
-        4 => if (this.add.flags.carry == 0) { ALU.CMP(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.CMP(this); },
         5 => ALU.CMP(this),
     }
 }
@@ -2102,7 +2154,53 @@ fn OP_EA(this: *NES) void {
     OPTYPE.I(this);
 }
 
+/// SBC #i
+fn OP_EB(this: *NES) void {
+    OPTYPE.M(this);
+    switch (this.timing) {
+        else => {},
+        1 => ALU.SBC(this),
+    }
+}
 
+/// [R] CPX a
+fn OP_EC(this: *NES) void {
+    OPTYPE.A_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => ALU.CPX(this),
+    }
+}
+
+/// [R] SBC a
+fn OP_ED(this: *NES) void {
+    OPTYPE.A_R(this);
+    switch (this.timing) {
+        else => {},
+        3 => ALU.SBC(this),
+    }
+}
+
+/// [M] INC a
+fn OP_EE(this: *NES) void {
+    OPTYPE.A_M(this);
+    switch (this.timing) {
+        else => {},
+        4 => ALU.INC(this),
+    }
+}
+
+/// [M] ISC a
+fn OP_EF(this: *NES) void {
+    OPTYPE.A_M(this);
+    switch (this.timing) {
+        else => {},
+        4 => {
+            ALU.INC(this);
+            ALU.SBC(this);
+        },
+    }
+}
 
 /// BEQ
 fn OP_F0(this: *NES) void {
@@ -2114,7 +2212,7 @@ fn OP_F1(this: *NES) void {
     OPTYPE.IY_R(this);
     switch (this.timing) {
         else => {},
-        4 => if (this.add.flags.carry == 0) { ALU.SBC(this); },
+        0xE => if (this.add.flags.carry == 0) { ALU.SBC(this); },
         5 => ALU.SBC(this),
     }
 }
@@ -2193,8 +2291,8 @@ pub const opTable = [_]*const fn(*NES) void{
     OP_90, OP_91, OP_92, OP_93, OP_94, OP_95, OP_96, OP_97, OP_98, OP_99, OP_9A, OP_9B, OP_9C, OP_9D, OP_9E, OP_9F,
     OP_A0, OP_A1, OP_A2, OP_A3, OP_A4, OP_A5, OP_A6, OP_A7, OP_A8, OP_A9, OP_AA, OP_AB, OP_AC, OP_AD, OP_AE, OP_AF,
     OP_B0, OP_B1, OP_B2, OP_B3, OP_B4, OP_B5, OP_B6, OP_B7, OP_B8, OP_B9, OP_BA, OP_BB, OP_BC, OP_BD, OP_BE, OP_BF,
-    OP_C0, OP_C1, OP_C2, OP_C3, OP_C4, OP_C5, OP_C6, OP_C7, OP_C8, OP_C9, OP_CA, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_C0, OP_C1, OP_C2, OP_C3, OP_C4, OP_C5, OP_C6, OP_C7, OP_C8, OP_C9, OP_CA, OP_CB, OP_CC, OP_CD, OP_CE, OP_CF,
     OP_D0, OP_D1, OP_D2, OP_D3, OP_D4, OP_D5, OP_D6, OP_D7, OP_D8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
-    OP_E0, OP_E1, OP_E2, OP_E3, OP_E4, OP_E5, OP_E6, OP_E7, OP_E8, OP_E9, OP_EA, OP_02, OP_02, OP_02, OP_02, OP_02,
+    OP_E0, OP_E1, OP_E2, OP_E3, OP_E4, OP_E5, OP_E6, OP_E7, OP_E8, OP_E9, OP_EA, OP_EB, OP_EC, OP_ED, OP_EE, OP_EF,
     OP_F0, OP_F1, OP_F2, OP_F3, OP_F4, OP_F5, OP_F6, OP_F7, OP_F8, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02, OP_02,
 };
